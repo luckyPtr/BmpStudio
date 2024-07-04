@@ -1,5 +1,10 @@
 # Changelog
 
+### [Unreleased]
+#### Fiex
+- 修复组合图信息显示异常
+
+
 ### [0.2.1] - 2024-06-26
 
 #### Changed

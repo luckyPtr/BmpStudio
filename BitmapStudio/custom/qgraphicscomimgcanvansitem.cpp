@@ -312,25 +312,27 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
         QPoint rectStartPoint;
         rectStartPoint.setX(startPoint.x() + item.x * Global::pixelSize);
         rectStartPoint.setY(startPoint.y() + (item.y + img.size().height()) * Global::pixelSize + 6);
-        if (rectStartPoint.x() < 25)
+        if (rectStartPoint.x() < 25 + view->horizontalScrollBar()->value())
         {
-            rectStartPoint.setX(25);
+            rectStartPoint.setX(25 + view->horizontalScrollBar()->value());
         }
-        if (rectStartPoint.y() < 25)
+        if (rectStartPoint.y() < 25 + view->verticalScrollBar()->value())
         {
-            rectStartPoint.setY(25);
+            rectStartPoint.setY(25 + view->verticalScrollBar()->value());
         }
         int offset = view->verticalScrollBar()->isVisible() ? 25 : 6;
-        if (rectStartPoint.x() > view->width() - size.width() - offset)
+        if (rectStartPoint.x() > view->width() - size.width() - offset + view->horizontalScrollBar()->value())
         {
-            rectStartPoint.setX(view->width() - size.width() - offset);
+            rectStartPoint.setX(view->width() - size.width() - offset + view->horizontalScrollBar()->value());
         }
 
         offset = view->horizontalScrollBar()->isVisible() ? 25 : 6;
-        if (rectStartPoint.y() > view->height() - size.height() - offset)
+        if (rectStartPoint.y() > view->height() - size.height() - offset + view->verticalScrollBar()->value())
         {
-            rectStartPoint.setY(view->height() - size.height() - offset);
+            rectStartPoint.setY(view->height() - size.height() - offset + view->verticalScrollBar()->value());
         }
+
+        qDebug() << "x:" << rectStartPoint.x();
 #else
         QPoint rectStartPoint(startPoint.x() + 9, view->height() - 70);
         if (view->horizontalScrollBar()->isVisible())   // 有水平滚动条时上移，防止被滚动条挡住
@@ -338,7 +340,6 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
             rectStartPoint.setY(rectStartPoint.y() - 19);
         }
 #endif
-
 
 
         QRect rect(rectStartPoint, size);
