@@ -298,6 +298,7 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
                 maxWidth = lineWidth;
             }
         }
+        int height = metrics.height() * lines.size();
 
         QPen pen(QColor(240, 240, 240, 220));
         QBrush brush;
@@ -305,7 +306,7 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
         brush.setStyle(Qt::SolidPattern);
         painter->setBrush(brush);
         painter->setPen(pen);
-        QSize size = QSize(maxWidth + 8, 60);
+        QSize size = QSize(maxWidth + 8, height);
 
 #if ITEM_INFO_FOLLOW
         QPoint rectStartPoint;
