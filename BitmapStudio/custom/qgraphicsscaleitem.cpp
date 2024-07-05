@@ -25,13 +25,16 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     int width = qMax(view->width(), (int)view->scene()->width());
     int height = qMax(view->height(), (int)view->scene()->height());
 
+    int x0 = view->horizontalScrollBar()->value();
+    int y0 = view->verticalScrollBar()->value();
+
     QPoint points[] = {
-        QPoint(-1, -4),
-        QPoint(width, -4),
-        QPoint(width, Global::scaleWidth),
-        QPoint(Global::scaleWidth, Global::scaleWidth),
-        QPoint(Global::scaleWidth, height),
-        QPoint(0, height)
+        QPoint(-1 + x0, -4 + y0),
+        QPoint(width + x0, -4 + y0),
+        QPoint(width + x0, Global::scaleWidth + y0),
+        QPoint(Global::scaleWidth + x0, Global::scaleWidth + y0),
+        QPoint(Global::scaleWidth + x0, height + y0),
+        QPoint(0 + x0, height + y0)
     };
     painter->drawPolygon(points, 6);
 
@@ -40,14 +43,14 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     for(int i = 0, x = 0; x < width; i++)
     {
         x = Global::scaleWidth + Global::scaleOffset + i * Global::pixelSize;
-        QLine line(x, i % 10 == 0 ? 0 : Global::scaleWidth - 4, x, Global::scaleWidth);
+        QLine line(x, i % 10 == 0 ? y0 : Global::scaleWidth - 4 + y0, x, Global::scaleWidth + y0);
         painter->drawLine(line);
     }
     // 垂直刻度线
     for(int i = 0, y = 0; y < height; i++)
     {
         y = Global::scaleWidth + Global::scaleOffset + i * Global::pixelSize;
-        QLine line(i % 10 == 0 ? 0 : Global::scaleWidth - 4, y, Global::scaleWidth, y);
+        QLine line(i % 10 == 0 ? x0 : Global::scaleWidth - 4 + x0, y, Global::scaleWidth + x0, y);
         painter->drawLine(line);
     }
 
@@ -61,14 +64,14 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     {
         x = Global::scaleWidth + Global::scaleOffset + i * Global::pixelSize;
         // 每10像素绘制长刻度线和数值
-        painter->drawText(x + 2, Global::scaleWidth / 2 + 2, QString::number(i));
+        painter->drawText(x + 2, Global::scaleWidth / 2 + 2 + y0, QString::number(i));
     }
     painter->save();
     painter->rotate(90);
     for(int i = 0, y = 0; y < height; i+=10)
     {
         y = Global::scaleWidth + Global::scaleOffset + i * Global::pixelSize;
-        painter->drawText(y + 2, Global::scaleWidth / 2 - 10, QString::number(i));
+        painter->drawText(y + 2, Global::scaleWidth / 2 - 10 - x0, QString::number(i));
     }
     painter->restore();
 

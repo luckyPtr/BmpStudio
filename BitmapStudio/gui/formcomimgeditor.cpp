@@ -8,6 +8,22 @@
 #include <gui/dialogresize.h>
 #include <gui/dialogposition.h>
 
+class FixedScaleView : public QGraphicsView {
+public:
+    FixedScaleView(QGraphicsScene* scene, QWidget* parent = nullptr)
+        : QGraphicsView(scene, parent) {
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
+
+protected:
+    void resizeEvent(QResizeEvent* event) override {
+        QGraphicsView::resizeEvent(event);
+        fitInView(scene()->sceneRect(), Qt::IgnoreAspectRatio);
+    }
+};
+
+
 
 FormComImgEditor::FormComImgEditor(QWidget *parent) :
     CustomTab(parent),
