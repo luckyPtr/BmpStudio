@@ -25,8 +25,9 @@ FormPixelEditor::FormPixelEditor(QWidget *parent) :
     scanvasItem = new QGraphicsCanvasItem(ui->graphicsView);
     scanvasItem->setFlags(QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemIsFocusable);
 
-    scene->addItem(scaleItem);
     scene->addItem(scanvasItem);
+    scene->addItem(scaleItem);
+
     QBrush brush;
     brush.setColor(0xcbd4e4);
     brush.setStyle(Qt::SolidPattern);

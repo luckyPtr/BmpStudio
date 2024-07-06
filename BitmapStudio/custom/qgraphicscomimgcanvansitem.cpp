@@ -332,7 +332,6 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
             rectStartPoint.setY(view->height() - size.height() - offset + view->verticalScrollBar()->value());
         }
 
-        qDebug() << "x:" << rectStartPoint.x();
 #else
         QPoint rectStartPoint(startPoint.x() + 9, view->height() - 70);
         if (view->horizontalScrollBar()->isVisible())   // 有水平滚动条时上移，防止被滚动条挡住
@@ -340,7 +339,6 @@ void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
             rectStartPoint.setY(rectStartPoint.y() - 19);
         }
 #endif
-
 
         QRect rect(rectStartPoint, size);
         painter->drawRect(rect);

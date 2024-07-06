@@ -78,10 +78,16 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     // 绘制当前刻度
     pen.setColor(Qt::red);
     painter->setPen(pen);
-    QLine lineHorizontalScale(qMax((int)mousePos.x(), Global::scaleWidth), 0, qMax((int)mousePos.x(), Global::scaleWidth), Global::scaleWidth);
-    QLine lineVerticalScale(0, qMax((int)mousePos.y(), Global::scaleWidth), Global::scaleWidth, qMax((int)mousePos.y(), Global::scaleWidth));
+    int maxX = qMax((int)mousePos.x(), Global::scaleWidth + x0 + Global::scaleOffset);
+    QLine lineHorizontalScale(maxX, y0, maxX, Global::scaleWidth + y0);
+    int maxY = qMax((int)mousePos.y(), Global::scaleWidth + y0 + Global::scaleOffset);
+    QLine lineVerticalScale(x0, maxY, Global::scaleWidth + x0, maxY);
     painter->drawLine(lineHorizontalScale);
     painter->drawLine(lineVerticalScale);
+
+    // 覆盖有滚动条时左上角的刻度
+    painter->setPen(Qt::NoPen);
+    painter->drawRect(x0, y0, Global::scaleWidth + 1, Global::scaleWidth + 1);
 }
 
 
@@ -134,10 +140,7 @@ QPainterPath QGraphicsScaleItem::shape() const
 
 void QGraphicsScaleItem::mouseMove(QPoint point)
 {
-    // 将坐标映射到sense原点相对位置
     mousePos = point;
-    mousePos.setX(mousePos.x() + view->horizontalScrollBar()->value());
-    mousePos.setY(mousePos.y() + view->verticalScrollBar()->value());
     this->update();
 }
 
@@ -152,7 +155,6 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         {
             createFlag = true;
             emit createAuxLine(Qt::Vertical);
-            qDebug() << "emit createAuxLine(Qt::Vertical);";
         }
 
     }
@@ -162,7 +164,6 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         {
             createFlag = true;
             emit createAuxLine(Qt::Horizontal);
-            qDebug() << "emit createAuxLine(Qt::Horizontal);";
         }
     }
 

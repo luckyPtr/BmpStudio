@@ -5,8 +5,7 @@
 
 void QWGraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-//    qDebug() << "mouse move" << mapToScene(event->pos());
-    QPoint point = mapToScene(event->pos()).toPoint();  // 把坐标映射到Scene上的坐标，防止有ScrollBar的时候像素画图坐标不
+    QPoint point = mapToScene(event->pos()).toPoint();  // 把坐标映射到Scene上的坐标，防止有ScrollBar的时候像素画图坐标不对
     emit mouseMovePoint(point);
     QGraphicsView::mouseMoveEvent(event);
 }
