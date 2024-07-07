@@ -683,7 +683,12 @@ void QGraphicsComImgCanvansItem::dragMoveEvent(QGraphicsSceneDragDropEvent *even
 
 void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-//    qDebug() << "mouseMoveEvent";
+    qDebug() << "CI mouseMoveEvent";
+}
+
+void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    qDebug() << "CI Press";
 }
 
 void QGraphicsComImgCanvansItem::on_MousePress(QPoint point)

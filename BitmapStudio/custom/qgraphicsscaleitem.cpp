@@ -6,6 +6,11 @@
 #include "global.h"
 #include <QScrollBar>
 #include <QGraphicsSceneMouseEvent>
+#include <QApplication>
+#include <QGraphicsScene>
+
+// 辅助线
+QVector<QGraphicsScaleItem::AuxiliaryLine> QGraphicsScaleItem::auxiliaryLines;
 
 
 void QGraphicsScaleItem::drawScale(QPainter *painter)
@@ -55,7 +60,7 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     }
 
     // 绘制刻度线数字
-    QFont font(QStringLiteral("微软雅黑"), 8);
+    QFont font(QStringLiteral("Arial"), 8);
     painter->setFont(font);
     pen.setColor(QColor(0x334b6a));
     painter->setPen(pen);
@@ -75,6 +80,10 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     }
     painter->restore();
 
+    // 覆盖有滚动条时左上角的刻度
+    painter->setPen(Qt::NoPen);
+    painter->drawRect(x0, y0, Global::scaleWidth + 1, Global::scaleWidth + 1);
+
     // 绘制当前刻度
     pen.setColor(Qt::red);
     painter->setPen(pen);
@@ -85,9 +94,133 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
     painter->drawLine(lineHorizontalScale);
     painter->drawLine(lineVerticalScale);
 
-    // 覆盖有滚动条时左上角的刻度
-    painter->setPen(Qt::NoPen);
-    painter->drawRect(x0, y0, Global::scaleWidth + 1, Global::scaleWidth + 1);
+
+}
+
+void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
+{
+    QPen pen(QColor(255,105,180));
+    painter->setPen(pen);
+
+    int width = qMax(view->width(), (int)view->scene()->width());
+    int height = qMax(view->height(), (int)view->scene()->height());
+
+    auto paintLine = [=](Qt::Orientation dir, int scale){
+        if(dir == Qt::Horizontal)
+        {
+            painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, width, startPoint.y() + scale * Global::pixelSize);
+        }
+        else
+        {
+            painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, height);
+        }
+    };
+
+    foreach(auto line, auxiliaryLines)
+    {
+        paintLine(line.dir, line.scale);
+    }
+
+#if AUX_LINE_SCALE
+    auto paintLinePos = [=](AuxiliaryLine line) {
+        if(line.scale >= 0)
+        {
+            QPen pen(QColor(240, 240, 240, 220));
+            QBrush brush;
+            brush.setColor(QColor(240, 240, 240, 220));
+            brush.setStyle(Qt::SolidPattern);
+            painter->setBrush(brush);
+            painter->setPen(pen);
+            QFont font;
+            font.setFamily("Microsoft YaHei");
+            font.setPointSize(9);
+            painter->setFont(font);
+
+            QPoint p;
+            if(line.dir == Qt::Horizontal)
+            {
+                p = QPoint(startPoint.x() + 10, startPoint.y() + line.scale * Global::pixelSize + 5);
+            }
+            else
+            {
+                p = QPoint(startPoint.x() + line.scale * Global::pixelSize + 10, startPoint.y() + 5);
+            }
+
+            QRect rect(p, QSize(30, 16));
+            painter->drawRect(rect);
+            pen.setColor(Global::gridColor);
+            painter->setPen(pen);
+            painter->drawText(rect, Qt::AlignCenter, QString::asprintf("%d", line.scale));
+        }
+    };
+
+    if(selectedAuxiliaryLine != -1)
+    {
+        paintLinePos(auxiliaryLines.at(selectedAuxiliaryLine));
+    }
+#endif
+}
+
+bool QGraphicsScaleItem::isScaleArea(QPoint point)
+{
+    int x0 = view->horizontalScrollBar()->value();
+    int y0 = view->verticalScrollBar()->value();
+
+    QPolygon scaleArea;
+    int width = qMax(view->width(), (int)view->scene()->width());
+    int height = qMax(view->height(), (int)view->scene()->height());
+    scaleArea << QPoint(x0, y0)
+              << QPoint(x0+ width, y0)
+              << QPoint(x0+ width, y0 + Global::scaleWidth)
+              << QPoint(x0+ Global::scaleWidth, y0 + Global::scaleWidth)
+              << QPoint(x0+ Global::scaleWidth, y0 + height)
+              << QPoint(x0, y0 + height);
+
+    return scaleArea.containsPoint(point, Qt::OddEvenFill);
+}
+
+bool QGraphicsScaleItem::isHorizontalScale(QPoint point)
+{
+    int x0 = view->horizontalScrollBar()->value();
+    int y0 = view->verticalScrollBar()->value();
+    int width = qMax(view->width(), (int)view->scene()->width());
+    QRect rect(QPoint(Global::scaleWidth + x0, y0), QPoint(width + x0, Global::scaleWidth + y0));
+
+    return rect.contains(point);
+}
+
+bool QGraphicsScaleItem::isVerticalScale(QPoint point)
+{
+    int x0 = view->horizontalScrollBar()->value();
+    int y0 = view->verticalScrollBar()->value();
+    int height = qMax(view->height(), (int)view->scene()->height());
+    QRect rect(QPoint(x0, y0 + Global::scaleWidth), QPoint(x0 + Global::scaleWidth, y0 + height));
+
+    return rect.contains(point);
+}
+
+void QGraphicsScaleItem::sendEventToOtherItems(QGraphicsSceneMouseEvent *event)
+{
+    QList<QGraphicsItem *> items = scene()->items();
+    foreach (auto item, items)
+    {
+        if (item != this)
+        {
+            QGraphicsSceneMouseEvent *newEvent = new QGraphicsSceneMouseEvent(event->type());
+            newEvent->setScenePos(event->scenePos());
+            newEvent->setScreenPos(event->screenPos());
+            newEvent->setButton(event->button());
+            newEvent->setButtons(event->buttons());
+            newEvent->setModifiers(event->modifiers());
+            scene()->sendEvent(item, newEvent);
+        }
+    }
+}
+
+QPoint QGraphicsScaleItem::pointToPixel(QPoint point)
+{
+    return QPoint((point.x() - startPoint.x() + Global::pixelSize / 2) / Global::pixelSize,
+                  (point.y() - startPoint.y() + Global::pixelSize / 2) / Global::pixelSize);
 }
 
 
@@ -97,6 +230,9 @@ QGraphicsScaleItem::QGraphicsScaleItem(QWidget *parent)
     connect(view, SIGNAL(mouseMovePoint(QPoint)), this, SLOT(mouseMove(QPoint)));
 
     view->setStyleSheet("QGraphicsView {border:1px solid #A0A0A0; border-top:none}");
+
+    startPoint.setX(Global::scaleWidth + Global::scaleOffset);
+    startPoint.setY(Global::scaleWidth + Global::scaleOffset);
 }
 
 QGraphicsScaleItem::~QGraphicsScaleItem()
@@ -117,60 +253,115 @@ void QGraphicsScaleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
     Q_UNUSED(widget)
 
     drawScale(painter);
+    drawAuxiliaryLines(painter);
 }
 
-QPainterPath QGraphicsScaleItem::shape() const
-{
-    int width = qMax(view->width(), (int)view->scene()->width());
-    int height = qMax(view->height(), (int)view->scene()->height());
-    QPainterPath path;
+// QPainterPath QGraphicsScaleItem::shape() const
+// {
+//     int width = qMax(view->width(), (int)view->scene()->width());
+//     int height = qMax(view->height(), (int)view->scene()->height());
+//     QPainterPath path;
 
-    QVector<QPointF> points = {
-        QPointF(0, 0),
-        QPointF(width, 0),
-        QPointF(width, Global::scaleWidth),
-        QPointF(Global::scaleWidth, Global::scaleWidth),
-        QPointF(Global::scaleWidth, height),
-        QPointF(0, height)
-    };
-    path.addPolygon(QPolygonF(points));
+//     QVector<QPointF> points = {
+//         QPointF(0, 0),
+//         QPointF(width, 0),
+//         QPointF(width, Global::scaleWidth),
+//         QPointF(Global::scaleWidth, Global::scaleWidth),
+//         QPointF(Global::scaleWidth, height),
+//         QPointF(0, height)
+//     };
+//     path.addPolygon(QPolygonF(points));
 
-    return path;
-}
+//     return path;
+// }
 
 void QGraphicsScaleItem::mouseMove(QPoint point)
 {
     mousePos = point;
+
     this->update();
+}
+
+void QGraphicsScaleItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
+{
+    // 一个点是否在线的附近
+    auto isInLine = [=](AuxiliaryLine line, QPoint point) -> bool
+    {
+        if (line.dir == Qt::Horizontal)
+        {
+            return line.scale == pointToPixel(point).y();
+        }
+        else
+        {
+            return line.scale == pointToPixel(point).x();
+        }
+    };
+
+
+    for (int i = 0; i < auxiliaryLines.size(); i++)
+    {
+        if (isInLine(auxiliaryLines.at(i), event->pos().toPoint()))
+        {
+            selectedAuxiliaryLine = i;
+        }
+    }
+
+    // 非辅助线区域，传递下去
+    if (selectedAuxiliaryLine == -1)
+    {
+        sendEventToOtherItems(event);
+    }
 }
 
 void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    static QPointF lastPoint(520, 520);
-    QPointF currentPoint = event->pos();
+    static QPoint lastPoint(520, 520);
+    QPoint currentPoint = event->pos().toPoint();
 
-    if(lastPoint.x() <= Global::scaleWidth && currentPoint.x() > Global::scaleWidth)
+    auto createAuxiliaryLine = [=](Qt::Orientation ori) {
+        AuxiliaryLine auxLine(ori, 0);
+        auxiliaryLines << auxLine;
+        selectedAuxiliaryLine = auxiliaryLines.size() - 1;
+        view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+    };
+
+    // 有辅助线被选中
+    if (selectedAuxiliaryLine >= 0)
     {
-        if(!createFlag)
+        AuxiliaryLine *line = &auxiliaryLines[selectedAuxiliaryLine];
+        QPoint point = pointToPixel(currentPoint);
+        line->scale = line->dir == Qt::Horizontal ? point.y() : point.x();
+
+        //view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+    }
+    else
+    {
+        // 从刻度区域移动到画布区域
+        if (isHorizontalScale(lastPoint) && !isScaleArea(currentPoint))
         {
             createFlag = true;
-            emit createAuxLine(Qt::Vertical);
-        }
+            createAuxiliaryLine(Qt::Horizontal);
 
-    }
-    else if(lastPoint.y() <= Global::scaleWidth && currentPoint.y() > Global::scaleWidth)
-    {
-        if(!createFlag)
+        }
+        else if (isVerticalScale(lastPoint) && !isScaleArea(currentPoint))
         {
             createFlag = true;
-            emit createAuxLine(Qt::Horizontal);
+            createAuxiliaryLine(Qt::Vertical);
+        }
+        else
+        {
+            sendEventToOtherItems(event);
         }
     }
+
 
     lastPoint = currentPoint;
 }
 
 void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    Q_UNUSED(event)
     createFlag = false;
+
+    selectedAuxiliaryLine = -1;
 }

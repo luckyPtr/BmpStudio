@@ -79,7 +79,7 @@ protected:
     void dropEvent(QGraphicsSceneDragDropEvent *event) override;//处理drop
     void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;//添加QDrag
-
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 public slots:
     void on_MousePress(QPoint point);
     void on_MouseMove(QPoint point);
