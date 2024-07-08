@@ -99,20 +99,29 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
 
 void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
 {
-    QPen pen(QColor(255,105,180));
+    if (auxiliaryLines.size() == 0)
+        return;
+
+    QColor guidesColor(Global::guidesColor);
+    QColor selectedGuidesColor(Global::selectedGuidesColor);
+    QPen pen(guidesColor);
     painter->setPen(pen);
+
 
     int width = qMax(view->width(), (int)view->scene()->width());
     int height = qMax(view->height(), (int)view->scene()->height());
 
     auto paintLine = [=](Qt::Orientation dir, int scale){
-        if(dir == Qt::Horizontal)
+        if (scale >= 0)
         {
-            painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, width, startPoint.y() + scale * Global::pixelSize);
-        }
-        else
-        {
-            painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, height);
+            if(dir == Qt::Horizontal)
+            {
+                painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, width, startPoint.y() + scale * Global::pixelSize);
+            }
+            else
+            {
+                painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, height);
+            }
         }
     };
 
@@ -120,6 +129,20 @@ void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
     {
         paintLine(line.dir, line.scale);
     }
+
+    QPoint mousePixel = pointToPixel(mousePos.toPoint());
+    for (int i = auxiliaryLines.size() - 1; i >= 0; i--)
+    {
+        AuxiliaryLine line = auxiliaryLines.at(i);
+        if (line.scale == (line.dir == Qt::Horizontal ? mousePixel.y() : mousePixel.x()))
+        {
+            pen.setColor(selectedGuidesColor);
+            painter->setPen(pen);
+            paintLine(line.dir, line.scale);
+            break;
+        }
+    }
+
 
 #if AUX_LINE_SCALE
     auto paintLinePos = [=](AuxiliaryLine line) {
@@ -132,7 +155,7 @@ void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
             painter->setBrush(brush);
             painter->setPen(pen);
             QFont font;
-            font.setFamily("Microsoft YaHei");
+            font.setFamily("Arial");
             font.setPointSize(9);
             painter->setFont(font);
 
@@ -332,20 +355,21 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         QPoint point = pointToPixel(currentPoint);
         line->scale = line->dir == Qt::Horizontal ? point.y() : point.x();
 
-        //view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+        if (line->scale < 0)
+            view->setCursor(Qt::ForbiddenCursor);
+        else
+            view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
     }
     else
     {
         // 从刻度区域移动到画布区域
         if (isHorizontalScale(lastPoint) && !isScaleArea(currentPoint))
         {
-            createFlag = true;
             createAuxiliaryLine(Qt::Horizontal);
 
         }
         else if (isVerticalScale(lastPoint) && !isScaleArea(currentPoint))
         {
-            createFlag = true;
             createAuxiliaryLine(Qt::Vertical);
         }
         else
@@ -361,7 +385,15 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
     Q_UNUSED(event)
-    createFlag = false;
 
+    if (selectedAuxiliaryLine >= 0)
+    {
+        if (auxiliaryLines.at(selectedAuxiliaryLine).scale < 0)
+        {
+            auxiliaryLines.removeAt(selectedAuxiliaryLine);
+        }
+    }
     selectedAuxiliaryLine = -1;
+
+    qDebug() << auxiliaryLines.size();
 }

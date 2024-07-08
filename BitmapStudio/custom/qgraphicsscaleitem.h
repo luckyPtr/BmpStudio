@@ -28,8 +28,6 @@ private:
     QPointF mousePos;
     void drawScale(QPainter *painter);
     void drawAuxiliaryLines(QPainter *painter);
-    bool createFlag = false;
-    bool isSelected = false;    // 是否选中辅助线
     bool isScaleArea(QPoint point);     // 是否在刻度尺区域
     bool isHorizontalScale(QPoint point);   // 是否在水平刻度线
     bool isVerticalScale(QPoint point);     // 是否在垂直的刻度线区域内
