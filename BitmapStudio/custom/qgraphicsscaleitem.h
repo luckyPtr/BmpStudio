@@ -24,13 +24,16 @@ private:
     QGraphicsView *view;
     static QVector<AuxiliaryLine> auxiliaryLines;
     int selectedAuxiliaryLine = -1;     // 选中的辅助线
+    int nearGuide = -1;                 // 接近的参考线
     QPoint startPoint;      // 画布左上角起始坐标
     QPointF mousePos;
+    QPoint mousePixel;      // 鼠标所在的像素坐标
     void drawScale(QPainter *painter);
     void drawAuxiliaryLines(QPainter *painter);
     bool isScaleArea(QPoint point);     // 是否在刻度尺区域
     bool isHorizontalScale(QPoint point);   // 是否在水平刻度线
     bool isVerticalScale(QPoint point);     // 是否在垂直的刻度线区域内
+    int getNearGuide(QPoint point);         // 获取附近的参考线
     void sendEventToOtherItems(QGraphicsSceneMouseEvent *event);
     QPoint pointToPixel(QPoint point);  // 转换为画布上的像素坐标
 public:
@@ -44,6 +47,7 @@ public slots:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 signals:
     void createAuxLine(Qt::Orientation dir);
 };
