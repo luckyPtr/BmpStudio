@@ -357,12 +357,20 @@ void QGraphicsScaleItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     {
         sendEventToOtherItems(event);
     }
+
+    mouseButton = event->button();
 }
 
 void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     static QPoint lastPoint(520, 520);
     QPoint currentPoint = event->pos().toPoint();
+
+    if (mouseButton != Qt::LeftButton)
+    {
+        sendEventToOtherItems(event);
+        return;
+    }
 
     auto createAuxiliaryLine = [=](Qt::Orientation ori) {
         AuxiliaryLine auxLine(ori, 0);
@@ -428,6 +436,8 @@ void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     {
         sendEventToOtherItems(event);
     }
+
+    mouseButton = Qt::NoButton;
 }
 
 void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
@@ -448,7 +458,7 @@ void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 
         menu.exec(event->screenPos());
     }
-    else if (getNearGuide(point) != -1)
+    else if (getNearGuide(point) != -1 && !QGraphicsScaleItem::isLock && !QGraphicsScaleItem::isHide)
     {
         QMenu menu;
         QAction *actDelteGuide = menu.addAction(tr("删除"));

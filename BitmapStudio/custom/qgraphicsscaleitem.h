@@ -30,6 +30,7 @@ private:
     QPoint startPoint;      // 画布左上角起始坐标
     QPointF mousePos;
     QPoint mousePixel;      // 鼠标所在的像素坐标
+    Qt::MouseButton mouseButton;
     void drawScale(QPainter *painter);
     void drawAuxiliaryLines(QPainter *painter);
     bool isScaleArea(QPoint point);     // 是否在刻度尺区域
