@@ -3,6 +3,7 @@
 #include "global.h"
 #include <QGraphicsSceneDragDropEvent>
 #include <QScrollBar>
+#include <QMenu>
 
 
 bool QGraphicsComImgCanvansItem::isInSizeVerArea(QPoint point)
@@ -689,6 +690,17 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     qDebug() << "CI Press";
+}
+
+void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    QMenu menu;
+    QAction *action1 = menu.addAction("Action 4");
+    QAction *action2 = menu.addAction("Action 5");
+
+
+    // 在鼠标右键点击的位置显示菜单
+    menu.exec(event->screenPos());
 }
 
 void QGraphicsComImgCanvansItem::on_MousePress(QPoint point)

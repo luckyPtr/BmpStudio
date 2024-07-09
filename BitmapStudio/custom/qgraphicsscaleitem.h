@@ -4,6 +4,7 @@
 #include <QGraphicsItem>
 #include <QObject>
 
+
 class QGraphicsScaleItem : public QGraphicsObject
 {
     Q_OBJECT
@@ -23,8 +24,9 @@ private:
 
     QGraphicsView *view;
     static QVector<AuxiliaryLine> auxiliaryLines;
+    static bool isLock;
+    static bool isHide;
     int selectedAuxiliaryLine = -1;     // 选中的辅助线
-    int nearGuide = -1;                 // 接近的参考线
     QPoint startPoint;      // 画布左上角起始坐标
     QPointF mousePos;
     QPoint mousePixel;      // 鼠标所在的像素坐标
@@ -48,6 +50,11 @@ public slots:
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
+    void on_DeleteAllGuides();
+    void on_LockGuides();
+    void on_HideGuides();
+    void on_DeleteGuide();
 signals:
     void createAuxLine(Qt::Orientation dir);
 };

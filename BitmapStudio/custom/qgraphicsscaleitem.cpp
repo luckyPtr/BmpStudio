@@ -9,10 +9,12 @@
 #include <QApplication>
 #include <QGraphicsScene>
 #include <QMenu>
+#include <QDebug>
 
 // 辅助线
 QVector<QGraphicsScaleItem::AuxiliaryLine> QGraphicsScaleItem::auxiliaryLines;
-
+bool QGraphicsScaleItem::isLock;
+bool QGraphicsScaleItem::isHide;
 
 void QGraphicsScaleItem::drawScale(QPainter *painter)
 {
@@ -100,7 +102,7 @@ void QGraphicsScaleItem::drawScale(QPainter *painter)
 
 void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
 {
-    if (auxiliaryLines.size() == 0)
+    if (auxiliaryLines.size() == 0 || QGraphicsScaleItem::isHide)
         return;
 
     QColor guidesColor(Global::guidesColor);
@@ -131,19 +133,21 @@ void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
         paintLine(line.dir, line.scale);
     }
 
-    QPoint mousePixel = pointToPixel(mousePos.toPoint());
-    for (int i = auxiliaryLines.size() - 1; i >= 0; i--)
+    if (!QGraphicsScaleItem::isLock)
     {
-        AuxiliaryLine line = auxiliaryLines.at(i);
-        if (line.scale == (line.dir == Qt::Horizontal ? mousePixel.y() : mousePixel.x()))
+        int nearLine = getNearGuide(mousePos.toPoint());
+        if (selectedAuxiliaryLine != -1)
         {
+            nearLine = selectedAuxiliaryLine;
+        }
+        if (nearLine != -1)
+        {
+            AuxiliaryLine line = auxiliaryLines.at(nearLine);
             pen.setColor(selectedGuidesColor);
             painter->setPen(pen);
             paintLine(line.dir, line.scale);
-            break;
         }
     }
-
 
 #if AUX_LINE_SCALE
     auto paintLinePos = [=](AuxiliaryLine line) {
@@ -230,10 +234,21 @@ int QGraphicsScaleItem::getNearGuide(QPoint point)
         for (int i = auxiliaryLines.size() - 1; i >= 0; i--)
         {
             AuxiliaryLine line = auxiliaryLines.at(i);
-            QPoint p = pointToPixel(point);
-            if (line.scale == (line.dir == Qt::Horizontal ? p.y() : p.x()))
+            if (line.dir == Qt::Horizontal)
             {
-                return i;
+                int y = startPoint.y() + Global::pixelSize * line.scale;
+                if (qAbs(y - point.y()) <= Global::pixelSize / 4)
+                {
+                    return i;
+                }
+            }
+            else
+            {
+                int x = startPoint.x() + Global::pixelSize * line.scale;
+                if (qAbs(x - point.x()) <= Global::pixelSize / 4)
+                {
+                    return i;
+                }
             }
         }
     }
@@ -328,10 +343,9 @@ void QGraphicsScaleItem::mouseMove(QPoint point)
     {
         lastMousePixel = mousePixel;
 
-        this->update();
     }
 
-
+    this->update();
 }
 
 void QGraphicsScaleItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
@@ -339,7 +353,7 @@ void QGraphicsScaleItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     selectedAuxiliaryLine = getNearGuide(event->pos().toPoint());
 
     // 非辅助线区域，传递下去
-    if (selectedAuxiliaryLine == -1)
+    if (selectedAuxiliaryLine == -1 || QGraphicsScaleItem::isLock || QGraphicsScaleItem::isHide)
     {
         sendEventToOtherItems(event);
     }
@@ -357,35 +371,38 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
     };
 
-    // 有辅助线被选中
-    if (selectedAuxiliaryLine >= 0)
+    if (!QGraphicsScaleItem::isLock && !QGraphicsScaleItem::isHide)
     {
-        AuxiliaryLine *line = &auxiliaryLines[selectedAuxiliaryLine];
-        QPoint point = pointToPixel(currentPoint);
-        line->scale = line->dir == Qt::Horizontal ? point.y() : point.x();
-
-        if (line->scale < 0)
-            view->setCursor(Qt::ForbiddenCursor);
-        else
-            view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
-    }
-    else
-    {
-        // 从刻度区域移动到画布区域
-        if (isHorizontalScale(lastPoint) && !isScaleArea(currentPoint))
+        // 有辅助线被选中
+        if (selectedAuxiliaryLine >= 0)
         {
-            createAuxiliaryLine(Qt::Horizontal);
+            AuxiliaryLine *line = &auxiliaryLines[selectedAuxiliaryLine];
+            QPoint point = pointToPixel(currentPoint);
+            line->scale = line->dir == Qt::Horizontal ? point.y() : point.x();
 
-        }
-        else if (isVerticalScale(lastPoint) && !isScaleArea(currentPoint))
-        {
-            createAuxiliaryLine(Qt::Vertical);
+            if (line->scale < 0)
+                view->setCursor(Qt::ForbiddenCursor);
+            else
+                view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
         }
         else
         {
-            if (getNearGuide(event->pos().toPoint()) == -1)
+            // 从刻度区域移动到画布区域
+            if (isHorizontalScale(lastPoint) && !isScaleArea(currentPoint))
             {
-                sendEventToOtherItems(event);
+                createAuxiliaryLine(Qt::Horizontal);
+
+            }
+            else if (isVerticalScale(lastPoint) && !isScaleArea(currentPoint))
+            {
+                createAuxiliaryLine(Qt::Vertical);
+            }
+            else
+            {
+                if (getNearGuide(event->pos().toPoint()) == -1)
+                {
+                    sendEventToOtherItems(event);
+                }
             }
         }
     }
@@ -403,6 +420,7 @@ void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         {
             auxiliaryLines.removeAt(selectedAuxiliaryLine);
         }
+        view->setCursor(Qt::ArrowCursor);
     }
     selectedAuxiliaryLine = -1;
 
@@ -414,11 +432,66 @@ void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-    QMenu menu;
-    QAction *action1 = menu.addAction("Action 1");
-    QAction *action2 = menu.addAction("Action 2");
+    QPoint point = event->pos().toPoint();
 
+    // 在标尺上右键
+    if (isScaleArea(point))
+    {
+        QMenu menu;
+        QAction *actDeleteAllGuides = menu.addAction(tr("删除所有参考线"));
+        QAction *actLockGuides = menu.addAction(tr(QGraphicsScaleItem::isLock ? "解锁参考线" : "锁定参考线"));
+        QAction *actHideGuides = menu.addAction(tr(QGraphicsScaleItem::isHide ? "显示参考线" : "隐藏参考线"));
 
-    // 在鼠标右键点击的位置显示菜单
-    menu.exec(event->screenPos());
+        connect(actDeleteAllGuides, &QAction::triggered, this, &QGraphicsScaleItem::on_DeleteAllGuides);
+        connect(actLockGuides, &QAction::triggered, this, &QGraphicsScaleItem::on_LockGuides);
+        connect(actHideGuides, &QAction::triggered, this, &QGraphicsScaleItem::on_HideGuides);
+
+        menu.exec(event->screenPos());
+    }
+    else if (getNearGuide(point) != -1)
+    {
+        QMenu menu;
+        QAction *actDelteGuide = menu.addAction(tr("删除"));
+        connect(actDelteGuide, &QAction::triggered, this, &QGraphicsScaleItem::on_DeleteGuide);
+
+        // 在鼠标右键点击的位置显示菜单
+        menu.exec(event->screenPos());
+    }
+    else
+    {
+        QList<QGraphicsItem *> items = scene()->items();
+        foreach (auto item, items)
+        {
+            if (item != this)
+            {
+                // QGraphicsSceneContextMenuEvent *newEvent = new QGraphicsSceneContextMenuEvent(event->type());
+                // newEvent->setScenePos(event->scenePos());
+                // newEvent->setScreenPos(event->screenPos());
+                // newEvent->setModifiers(event->modifiers());
+                scene()->sendEvent(item, event);
+            }
+        }
+    }
+}
+
+void QGraphicsScaleItem::on_DeleteAllGuides()
+{
+    auxiliaryLines.clear();
+}
+
+void QGraphicsScaleItem::on_LockGuides()
+{
+    QGraphicsScaleItem::isLock = !QGraphicsScaleItem::isLock;
+}
+
+void QGraphicsScaleItem::on_HideGuides()
+{
+    QGraphicsScaleItem::isHide = !QGraphicsScaleItem::isHide;
+}
+
+void QGraphicsScaleItem::on_DeleteGuide()
+{
+    int guideIndex = getNearGuide(mousePos.toPoint());
+    if (guideIndex != -1)
+        auxiliaryLines.removeAt(guideIndex);
 }
