@@ -684,62 +684,6 @@ void QGraphicsComImgCanvansItem::dragMoveEvent(QGraphicsSceneDragDropEvent *even
 
 void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    qDebug() << "CI mouseMoveEvent";
-}
-
-void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    qDebug() << "CI Press";
-}
-
-void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
-{
-    QMenu menu;
-    QAction *action1 = menu.addAction("Action 4");
-    QAction *action2 = menu.addAction("Action 5");
-
-
-    // 在鼠标右键点击的位置显示菜单
-    menu.exec(event->screenPos());
-}
-
-void QGraphicsComImgCanvansItem::on_MousePress(QPoint point)
-{
-    selectedItemIndex = getPointImgIndex(point);
-    selectedAuxiliaryLine = getPointAuxLineIndex(point);
-
-    if(action == ActionNull)
-    {
-        if(isInSizeFDiagArea(point))
-        {
-            action = ActionResizeFDiag;
-        }
-        else if(isInSizeVerArea(point))
-        {
-            action = ActionResizeVer;
-        }
-        else if(isInSizeHorArea(point))
-        {
-            action = ActionResizeHor;
-        }
-        else if(selectedAuxiliaryLine != -1)
-        {
-            action = ActionSelectAuxiliaryLine;
-            selectedItemIndex = -1;
-        }
-        else if(selectedItemIndex != -1)
-        {
-            action = ActionSelect;
-            moveStartPixel = currentPixel;
-        }
-    }
-
-
-    view->viewport()->update();
-}
-
-void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)
-{
     auto itemMove([&](){
         if(currentPixel != moveLastPixel)
         {
@@ -756,31 +700,7 @@ void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)
         }
     });
 
-    auto auxLineMove = [&](){
-        if(currentPixel != moveLastPixel)
-        {
-            AuxiliaryLine *line = &auxiliaryLines[selectedAuxiliaryLine];
-            if(line->dir == Qt::Horizontal)
-            {
-                line->scale += currentPixel.y() - moveLastPixel.y();
-            }
-            else
-            {
-                line->scale += currentPixel.x() - moveLastPixel.x();
-            }
-            moveLastPixel = currentPixel;
-
-            if(line->scale >= 0)
-            {
-                view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
-            }
-            else
-            {
-                view->setCursor(Qt::ForbiddenCursor);
-            }
-        }
-    };
-
+    QPoint point = event->pos().toPoint();
     currentPoint = point;
     currentPixel = pointToPixel(point);
 
@@ -800,17 +720,6 @@ void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)
             cursor = Qt::SizeHorCursor;
         }
         view->setCursor(cursor);
-    }
-    else if(action == ActionSelectAuxiliaryLine)
-    {
-        action = ActionMoveAuxiliaryLine;
-        moveLastPixel = currentPixel;
-        AuxiliaryLine auxLine = auxiliaryLines.at(selectedAuxiliaryLine);
-        view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
-    }
-    else if(action == ActionMoveAuxiliaryLine)
-    {
-        auxLineMove();
     }
     else if(action == ActionSelect)
     {
@@ -841,29 +750,63 @@ void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)
     emit updateStatusBarPos(currentPixel);
 }
 
-void QGraphicsComImgCanvansItem::on_MouseRelease(QPoint point)
+void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    auto removeAuxLine = [&](){
-        AuxiliaryLine auxLine = auxiliaryLines.at(selectedAuxiliaryLine);
-        if(auxLine.scale < 0)
+    QPoint point = event->pos().toPoint();
+
+    auto leftPressEvent = [=](){
+        selectedItemIndex = getPointImgIndex(point);
+
+        if(action == ActionNull)
         {
-            auxiliaryLines.remove(selectedAuxiliaryLine);
-            selectedAuxiliaryLine = -1;
+            if(isInSizeFDiagArea(point))
+            {
+                action = ActionResizeFDiag;
+            }
+            else if(isInSizeVerArea(point))
+            {
+                action = ActionResizeVer;
+            }
+            else if(isInSizeHorArea(point))
+            {
+                action = ActionResizeHor;
+            }
+            else if(selectedItemIndex != -1)
+            {
+                action = ActionSelect;
+                moveStartPixel = currentPixel;
+            }
         }
     };
 
-    if(action == ActionMoveAuxiliaryLine)
+    auto rightPressEvent = [=]() {
+        int itemIndex = getPointImgIndex(point);
+        if (itemIndex != -1)
+            selectedItemIndex = itemIndex;
+    };
+
+
+    if (event->button() == Qt::LeftButton)
     {
-        removeAuxLine();
+        leftPressEvent();
+    }
+    else if (event->button() == Qt::RightButton)
+    {
+        rightPressEvent();
     }
 
+    view->viewport()->update();
+}
+
+void QGraphicsComImgCanvansItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
+{
     if(action == ActionResizeFDiag || action == ActionResizeVer || action == ActionResizeHor)
     {
         action = ActionNull;
         comImg.size = newSize;
         view->scene()->setSceneRect(QRectF(0, 0, comImg.size.width() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset, comImg.size.height() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset));
     }
-    else if(action == ActionSelect || action == ActionMove || action == ActionSelectAuxiliaryLine || action == ActionMoveAuxiliaryLine)
+    else if(action == ActionSelect || action == ActionMove)
     {
         if(action == ActionMove)
         {
@@ -878,15 +821,18 @@ void QGraphicsComImgCanvansItem::on_MouseRelease(QPoint point)
     emitUpdatePreview();
 }
 
-void QGraphicsComImgCanvansItem::on_CreateAuxLine(Qt::Orientation dir)
+void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-    AuxiliaryLine auxLine(dir, 0);
-    auxiliaryLines << auxLine;
-    selectedAuxiliaryLine = auxiliaryLines.size() - 1;
-    action = ActionMoveAuxiliaryLine;
-    moveLastPixel = currentPixel;
-    view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+    QMenu menu;
+    QAction *action1 = menu.addAction("Action 4");
+    QAction *action2 = menu.addAction("Action 5");
+
+
+    // 在鼠标右键点击的位置显示菜单
+    menu.exec(event->screenPos());
+
 }
+
 
 QGraphicsComImgCanvansItem::QGraphicsComImgCanvansItem(QObject *parent)
 
@@ -899,10 +845,6 @@ QGraphicsComImgCanvansItem::QGraphicsComImgCanvansItem(QObject *parent)
 
     this->setAcceptHoverEvents(true);
     this->setAcceptDrops(true);
-
-    connect(view, SIGNAL(mousePress(QPoint)), this, SLOT(on_MousePress(QPoint)));
-    connect(view, SIGNAL(mouseMovePoint(QPoint)), this, SLOT(on_MouseMove(QPoint)));
-    connect(view, SIGNAL(mouseRelease(QPoint)), this, SLOT(on_MouseRelease(QPoint)));
 }
 
 QRectF QGraphicsComImgCanvansItem::boundingRect() const

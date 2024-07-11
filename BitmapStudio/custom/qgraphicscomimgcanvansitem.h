@@ -80,13 +80,9 @@ protected:
     void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;//添加QDrag
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 public slots:
-    void on_MousePress(QPoint point);
-    void on_MouseMove(QPoint point);
-    void on_MouseRelease(QPoint point);
-    void on_CreateAuxLine(Qt::Orientation dir);
-
     void deleteSelectItem();    // 删除选中的图片
     void deleteAll();           // 删除所有
     void on_Forward();           // 上移一层

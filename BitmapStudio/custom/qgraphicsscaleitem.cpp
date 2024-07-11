@@ -264,13 +264,7 @@ void QGraphicsScaleItem::sendEventToOtherItems(QGraphicsSceneMouseEvent *event)
     {
         if (item != this)
         {
-            QGraphicsSceneMouseEvent *newEvent = new QGraphicsSceneMouseEvent(event->type());
-            newEvent->setScenePos(event->scenePos());
-            newEvent->setScreenPos(event->screenPos());
-            newEvent->setButton(event->button());
-            newEvent->setButtons(event->buttons());
-            newEvent->setModifiers(event->modifiers());
-            scene()->sendEvent(item, newEvent);
+            scene()->sendEvent(item, event);
         }
     }
 }
@@ -376,7 +370,7 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         AuxiliaryLine auxLine(ori, 0);
         auxiliaryLines << auxLine;
         selectedAuxiliaryLine = auxiliaryLines.size() - 1;
-        view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+        view->setCursor(auxLine.dir == Qt::Horizontal ? Qt::SplitVCursor : Qt::SplitHCursor);
     };
 
     if (!QGraphicsScaleItem::isLock && !QGraphicsScaleItem::isHide)
@@ -391,7 +385,7 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             if (line->scale < 0)
                 view->setCursor(Qt::ForbiddenCursor);
             else
-                view->setCursor(line->dir == Qt::Horizontal ? Qt::SizeVerCursor : Qt::SizeHorCursor);
+                view->setCursor(line->dir == Qt::Horizontal ? Qt::SplitVCursor : Qt::SplitHCursor);
         }
         else
         {
@@ -474,10 +468,6 @@ void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         {
             if (item != this)
             {
-                // QGraphicsSceneContextMenuEvent *newEvent = new QGraphicsSceneContextMenuEvent(event->type());
-                // newEvent->setScenePos(event->scenePos());
-                // newEvent->setScreenPos(event->screenPos());
-                // newEvent->setModifiers(event->modifiers());
                 scene()->sendEvent(item, event);
             }
         }
