@@ -78,6 +78,7 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 public slots:
+    void on_MouseMove(QPoint);
     void on_DeleteSelectItem();    // 删除选中的图片
     void on_DeleteAll();           // 删除所有
     void on_Raise();           // 上移一层

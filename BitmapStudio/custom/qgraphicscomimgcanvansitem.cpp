@@ -712,13 +712,10 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         }
     });
 
-    QPoint point = event->pos().toPoint();
-    currentPoint = point;
-    currentPixel = pointToPixel(point);
 
     if(action == ActionNull)
     {
-        if (getPointImgIndex(point) == -1)
+        if (getPointImgIndex(currentPoint) == -1)
         {
             action = ActionMultiSelect;
             moveStartPixel = currentPixel;
@@ -726,15 +723,15 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         else
         {
             Qt::CursorShape cursor = Qt::ArrowCursor;
-            if(isInSizeFDiagArea(point))
+            if(isInSizeFDiagArea(currentPoint))
             {
                 cursor = Qt::SizeFDiagCursor;
             }
-            else if(isInSizeVerArea(point))
+            else if(isInSizeVerArea(currentPoint))
             {
                 cursor = Qt::SizeVerCursor;
             }
-            else if(isInSizeHorArea(point))
+            else if(isInSizeHorArea(currentPoint))
             {
                 cursor = Qt::SizeHorCursor;
             }
@@ -945,6 +942,30 @@ void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
 
 }
 
+void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)
+{
+    currentPoint = point;
+    currentPixel = pointToPixel(point);
+
+    if(action == ActionNull)
+    {
+        Qt::CursorShape cursor = Qt::ArrowCursor;
+        if(isInSizeFDiagArea(point))
+        {
+            cursor = Qt::SizeFDiagCursor;
+        }
+        else if(isInSizeVerArea(point))
+        {
+            cursor = Qt::SizeVerCursor;
+        }
+        else if(isInSizeHorArea(point))
+        {
+            cursor = Qt::SizeHorCursor;
+        }
+        view->setCursor(cursor);
+    }
+}
+
 
 QGraphicsComImgCanvansItem::QGraphicsComImgCanvansItem(QObject *parent)
 
@@ -968,6 +989,7 @@ QGraphicsComImgCanvansItem::QGraphicsComImgCanvansItem(QObject *parent)
         }
     };
     connect(this, SIGNAL(openImgTab(QString, int)), getMainWindow(), SLOT(on_OpenImgTab(QString, int)));
+    connect(view, SIGNAL(mouseMovePoint(QPoint)), this, SLOT(on_MouseMove(QPoint)));
 }
 
 QRectF QGraphicsComImgCanvansItem::boundingRect() const

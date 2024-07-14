@@ -119,11 +119,11 @@ void QGraphicsScaleItem::drawAuxiliaryLines(QPainter *painter)
         {
             if(dir == Qt::Horizontal)
             {
-                painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, width, startPoint.y() + scale * Global::pixelSize);
+                painter->drawLine(0, startPoint.y() + scale * Global::pixelSize, width, startPoint.y() + scale * Global::pixelSize);
             }
             else
             {
-                painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, height);
+                painter->drawLine(startPoint.x() + scale * Global::pixelSize, 0, startPoint.x() + scale * Global::pixelSize, height);
             }
         }
     };
@@ -306,8 +306,8 @@ void QGraphicsScaleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
     Q_UNUSED(option)
     Q_UNUSED(widget)
 
-    drawScale(painter);
     drawAuxiliaryLines(painter);
+    drawScale(painter);
 }
 
 
