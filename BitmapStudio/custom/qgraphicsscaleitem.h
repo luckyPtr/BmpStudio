@@ -31,6 +31,7 @@ private:
     QPointF mousePos;
     QPoint mousePixel;      // 鼠标所在的像素坐标
     Qt::MouseButton mouseButton;
+    int createGuidesStep = 0;   // 0-默认 1-在水平标尺区域按下 2-在垂直标尺区域按下 3-拖到画布区域
     void drawScale(QPainter *painter);
     void drawAuxiliaryLines(QPainter *painter);
     bool isScaleArea(QPoint point);     // 是否在刻度尺区域

@@ -356,12 +356,24 @@ void QGraphicsScaleItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
         sendEventToOtherItems(event);
     }
 
+    if (createGuidesStep == 0)
+    {
+        QPoint point = event->pos().toPoint();
+        if (isHorizontalScale(point))
+        {
+            createGuidesStep = 1;
+        }
+        else if (isVerticalScale(point))
+        {
+            createGuidesStep = 2;
+        }
+    }
+
     mouseButton = event->button();
 }
 
 void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    static QPoint lastPoint(520, 520);
     QPoint currentPoint = event->pos().toPoint();
 
     if (mouseButton != Qt::LeftButton)
@@ -394,14 +406,20 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         else
         {
             // 从刻度区域移动到画布区域
-            if (isHorizontalScale(lastPoint) && !isScaleArea(currentPoint))
+            if (!isScaleArea(currentPoint))
             {
-                createAuxiliaryLine(Qt::Horizontal);
-
-            }
-            else if (isVerticalScale(lastPoint) && !isScaleArea(currentPoint))
-            {
-                createAuxiliaryLine(Qt::Vertical);
+                if (createGuidesStep == 1)
+                {
+                    createAuxiliaryLine(Qt::Horizontal);
+                }
+                else if (createGuidesStep == 2)
+                {
+                    createAuxiliaryLine(Qt::Vertical);
+                }
+                else
+                {
+                    sendEventToOtherItems(event);
+                }
             }
             else
             {
@@ -412,9 +430,10 @@ void QGraphicsScaleItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
             }
         }
     }
-
-
-    lastPoint = currentPoint;
+    else
+    {
+        sendEventToOtherItems(event);
+    }
 }
 
 void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -429,8 +448,9 @@ void QGraphicsScaleItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         view->setCursor(Qt::ArrowCursor);
     }
     selectedAuxiliaryLine = -1;
+    createGuidesStep = 0;
 
-    if (getNearGuide(event->pos().toPoint()) == -1)
+    //if (getNearGuide(event->pos().toPoint()) == -1)
     {
         sendEventToOtherItems(event);
     }

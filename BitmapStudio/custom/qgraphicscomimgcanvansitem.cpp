@@ -345,7 +345,8 @@ void QGraphicsComImgCanvansItem::emitUpdatePreview()
         {
             for(int j = y; j < img1.height() && j < y + img2.height(); j++)
             {
-                img1.setPixelColor(i, j, img2.pixelColor(i-x, j-y));
+                if (i >= 0 && j >= 0)
+                    img1.setPixelColor(i, j, img2.pixelColor(i-x, j-y));
             }
         }
     };
