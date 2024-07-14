@@ -6,6 +6,11 @@ QCustomMenu::QCustomMenu(QWidget *parent) : QMenu(parent)
 
 }
 
+QCustomMenu::QCustomMenu(const QString &title, QWidget *parent) : QMenu(title, parent)
+{
+
+}
+
 void QCustomMenu::mouseReleaseEvent(QMouseEvent *e)
 {
      //屏蔽QMenu::mouseReleaseEvent(e)，达到拦截点击的目的，使其点击menu里面任何位置都无效。

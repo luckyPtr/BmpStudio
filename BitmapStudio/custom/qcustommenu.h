@@ -11,6 +11,7 @@ class QCustomMenu : public QMenu
     Q_OBJECT
 public:
     QCustomMenu(QWidget *parent = nullptr);
+    QCustomMenu(const QString &title, QWidget *parent = nullptr);
 protected:
     void mouseReleaseEvent(QMouseEvent *e);
 };

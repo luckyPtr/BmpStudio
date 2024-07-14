@@ -29,7 +29,7 @@ private:
     QGraphicsScaleItem *scaleItem;
 
     void initScrollerPos();   // 初始化滚轮位置为左上角
-
+    void initShortCut();
 protected:
     void leaveEvent(QEvent *event) override;
     void contextMenuEvent(QContextMenuEvent *event) override;
@@ -42,10 +42,6 @@ signals:
     void saveComImg(QString, int, ComImg);
     void openImgTab(QString, int);
     void updateStatusBarPos(QPoint);
-private slots:
-    void on_actResize_triggered();
-    void on_actPosition_triggered();
-    void on_actOpen_triggered();
 };
 
 #endif // FORMCOMIMGEDITOR_H

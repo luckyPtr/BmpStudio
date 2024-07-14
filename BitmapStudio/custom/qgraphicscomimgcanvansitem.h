@@ -13,11 +13,10 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
         ActionNull,
         ActionSelect,
         ActionMove,
-        ActionSelectAuxiliaryLine,
-        ActionMoveAuxiliaryLine,
         ActionResizeVer,
         ActionResizeHor,
         ActionResizeFDiag,
+        ActionMultiSelect,  // 多选
     };
 
     // https://blog.csdn.net/u013125105/article/details/100514290
@@ -30,7 +29,7 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
 
     Action action = ActionNull;
     QSize newSize;
-    int selectedItemIndex = -1;
+    QVector<int> selectedItems;
     QPoint currentPoint;
     QPoint currentPixel;    // 当前鼠标所在的坐标（图片像素）
     QPoint moveLastPixel;   // 移动图元上一次所在的坐标(像素)
@@ -38,7 +37,6 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
     int dragImgId;          // 拖入的图片ID
     bool isDragImg = false;
 
-    
     bool isInSizeVerArea(QPoint point); // 是否处于垂直调整画布大小的区域内
     bool isInSizeHorArea(QPoint point); // 是否处于水平调整画布大小的区域内
     bool isInSizeFDiagArea(QPoint point);
@@ -46,12 +44,11 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
     void paintItems(QPainter *painter);        // 绘制图形元素
     void paintGrid(QPainter *painter);          // 绘制网格
     void paintDragItem(QPainter *painter);      // 绘制拖入的图片
-    void paintAuxiliaryLines(QPainter *painter);    // 绘制辅助线
     void paintResizePoint(QPainter *painter);  // 绘制调整画布大小的点
+    void paintSelectionBox(QPainter *painter);
     void paintItemInfo(QPainter *painter);      // 绘制选择的图形的名称、位置等信息
     QPoint pointToPixel(QPoint point);  // 坐标转换为画布上的像素坐标
     int getPointImgIndex(QPoint point);
-    int getPointAuxLineIndex(QPoint point);
 
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
 
@@ -69,8 +66,6 @@ public:
     ComImg getComImg() { return comImg; }
     void resize(QSize size);
     void setItemPos(QPoint);
-    QPoint getSelectedItemPos();
-    ComImgItem getSelectedItem();
     QString getProject() { return rd->getProject(); }
 
 protected:
@@ -83,12 +78,12 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 public slots:
-    void deleteSelectItem();    // 删除选中的图片
-    void deleteAll();           // 删除所有
-    void on_Forward();           // 上移一层
-    void on_Backward();         // 下移一层
-    void on_Top();
-    void on_Bottom();
+    void on_DeleteSelectItem();    // 删除选中的图片
+    void on_DeleteAll();           // 删除所有
+    void on_Raise();           // 上移一层
+    void on_Lower();         // 下移一层
+    void on_RaiseToTop();
+    void on_LowerToBottom();
     void on_AlignVCenter();
     void on_AlignHCenter();
     void on_AlignCenter();
@@ -96,13 +91,16 @@ public slots:
     void on_MoveDown();
     void on_MoveLeft();
     void on_MoveRight();
-
+    void on_SetPos();
+    void on_ResizeCanvas();
+    void on_OpenImage();
 
 signals:
     void updateStatusBarPos(QPoint);
     void updateStatusBarSize(QSize);
     void updatePreview(QImage);
     void changed(bool);
+    void openImgTab(QString, int);
 };
 
 #endif // QGRAPHICSCOMIMGCANVANSITEM_H

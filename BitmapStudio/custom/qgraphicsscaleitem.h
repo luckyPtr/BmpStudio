@@ -3,7 +3,7 @@
 
 #include <QGraphicsItem>
 #include <QObject>
-
+#include <QDebug>
 
 class QGraphicsScaleItem : public QGraphicsObject
 {
@@ -45,6 +45,8 @@ public:
     QRectF boundingRect() const Q_DECL_OVERRIDE;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) Q_DECL_OVERRIDE;
     //QPainterPath shape() const Q_DECL_OVERRIDE;
+protected:
+
 public slots:
     void mouseMove(QPoint point);
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;

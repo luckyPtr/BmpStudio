@@ -4,6 +4,11 @@
 #include <QGraphicsSceneDragDropEvent>
 #include <QScrollBar>
 #include <QMenu>
+#include <QMessageBox>
+#include "qcustommenu.h"
+#include "gui/dialogresize.h"
+#include "gui/dialogposition.h"
+
 
 
 bool QGraphicsComImgCanvansItem::isInSizeVerArea(QPoint point)
@@ -70,7 +75,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
     // 绘制图形外框
     auto paintBound = ([=](int x0, int y0, QSize size, int index){
         QPen pen;
-        pen.setColor(index == selectedItemIndex ? Global::selectedItemBoundColor : Global::itemBoundColor);
+        pen.setColor(selectedItems.contains(index) ? Global::selectedItemBoundColor : Global::itemBoundColor);
         pen.setWidth(2);
         painter->setPen(pen);
 
@@ -78,7 +83,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
         painter->drawRect(rect);
 
         // 绘制选中图形
-        if(index == selectedItemIndex)
+        if(selectedItems.contains(index))
         {
             // 选择的图形高亮
             QBrush brush(QColor(0, 255, 255, 16));
@@ -159,69 +164,7 @@ void QGraphicsComImgCanvansItem::paintDragItem(QPainter *painter)
     }
 }
 
-void QGraphicsComImgCanvansItem::paintAuxiliaryLines(QPainter *painter)
-{
-    QPen pen(QColor(255,105,180));
-//    pen.setStyle(Qt::DotLine);
-    painter->setPen(pen);
 
-    auto paintLine = [=](Qt::Orientation dir, int scale){
-        if(dir == Qt::Horizontal)
-        {
-            painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, startPoint.x() + comImg.size.width() * Global::pixelSize, startPoint.y() + scale * Global::pixelSize);
-        }
-        else
-        {
-            painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, startPoint.y() + comImg.size.height() * Global::pixelSize);
-        }
-    };
-
-    foreach(auto line, auxiliaryLines)
-    {
-        paintLine(line.dir, line.scale);
-    }
-
-#if AUX_LINE_SCALE
-    auto paintLinePos = [=](AuxiliaryLine line) {
-        // painter->setRenderHints(QPainter::Antialiasing);    // 开启抗锯齿
-        if(line.scale >= 0)
-        {
-            QPen pen(QColor(240, 240, 240, 220));
-            QBrush brush;
-            brush.setColor(QColor(240, 240, 240, 220));
-            brush.setStyle(Qt::SolidPattern);
-            painter->setBrush(brush);
-            painter->setPen(pen);
-            QFont font;
-            font.setFamily("Microsoft YaHei");
-            font.setPointSize(9);
-            painter->setFont(font);
-
-            QPoint p;
-            if(line.dir == Qt::Horizontal)
-            {
-                p = QPoint(startPoint.x() + 10, startPoint.y() + line.scale * Global::pixelSize + 5);
-            }
-            else
-            {
-                p = QPoint(startPoint.x() + line.scale * Global::pixelSize + 10, startPoint.y() + 5);
-            }
-
-            QRect rect(p, QSize(30, 16));
-            painter->drawRect(rect);
-            pen.setColor(Global::gridColor);
-            painter->setPen(pen);
-            painter->drawText(rect, Qt::AlignCenter, QString::asprintf("%d", line.scale));
-        }
-        // painter->setRenderHints(QPainter::Antialiasing, false);
-    };
-
-    if(selectedAuxiliaryLine != -1)
-    {
-        paintLinePos(auxiliaryLines.at(selectedAuxiliaryLine));
-    }
-#endif
-}
 
 void QGraphicsComImgCanvansItem::paintResizePoint(QPainter *painter)
 {
@@ -269,11 +212,25 @@ void QGraphicsComImgCanvansItem::paintResizePoint(QPainter *painter)
     }
 }
 
+void QGraphicsComImgCanvansItem::paintSelectionBox(QPainter *painter)
+{
+    if (action == ActionMultiSelect)
+    {
+        QPen pen(Qt::yellow);
+        pen.setWidth(1);
+        pen.setStyle(Qt::DotLine);
+        painter->setPen(pen);
+        QRectF rect(QPoint(startPoint.x() + moveStartPixel.x() * Global::pixelSize, startPoint.y() + moveStartPixel.y() * Global::pixelSize),
+                    QPoint(startPoint.x() + currentPixel.x() * Global::pixelSize, startPoint.y() + currentPixel.y() * Global::pixelSize));
+        painter->drawRect(rect);
+    }
+}
+
 void QGraphicsComImgCanvansItem::paintItemInfo(QPainter *painter)
 {
-    if (selectedItemIndex != -1)
+    if (selectedItems.size() == 1)
     {
-        ComImgItem item = comImg.items[selectedItemIndex];
+        ComImgItem item = comImg.items[selectedItems[0]];
         QImage img = rd->getImage(item.id);
         QString name = rd->getName(item.id);
         QString text = QString(" %1\n X:%2  Y:%3\n W:%4  H:%5")
@@ -373,29 +330,7 @@ int QGraphicsComImgCanvansItem::getPointImgIndex(QPoint point)
     return index;
 }
 
-int QGraphicsComImgCanvansItem::getPointAuxLineIndex(QPoint point)
-{
-    int index = -1;
-    for(int i = 0; i < auxiliaryLines.size(); i++)
-    {
-        QRect lineRect;
-        AuxiliaryLine auxLine = auxiliaryLines[i];
-        if(auxLine.dir == Qt::Horizontal)
-        {
-            lineRect.setRect(startPoint.x(), startPoint.y() + auxLine.scale * Global::pixelSize - 2, comImg.size.width() * Global::pixelSize, 5);
-        }
-        else
-        {
-            lineRect.setRect(startPoint.x() + auxLine.scale * Global::pixelSize - 2, startPoint.y(), 5, comImg.size.height() * Global::pixelSize);
-        }
-        if(lineRect.contains(point))
-        {
-            index = i;
-        }
-    }
 
-    return index;
-}
 
 void QGraphicsComImgCanvansItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
@@ -451,9 +386,9 @@ void QGraphicsComImgCanvansItem::resize(QSize size)
 
 void QGraphicsComImgCanvansItem::setItemPos(QPoint pos)
 {
-    if (selectedItemIndex != -1)
+    if (selectedItems.size() == 1)
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
+        ComImgItem *ci = &comImg.items[selectedItems[0]];
         ci->x = pos.x();
         ci->y = pos.y();
         view->viewport()->update();
@@ -461,96 +396,93 @@ void QGraphicsComImgCanvansItem::setItemPos(QPoint pos)
     }
 }
 
-QPoint QGraphicsComImgCanvansItem::getSelectedItemPos()
+
+
+void QGraphicsComImgCanvansItem::on_DeleteSelectItem()
 {
-    if (selectedItemIndex != -1)
+    if(selectedItems.size() > 0)
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        return QPoint(ci->x, ci->y);
-    }
-    return QPoint(0, 0);
-}
-
-ComImgItem QGraphicsComImgCanvansItem::getSelectedItem()
-{
-    if (selectedItemIndex != -1)
-    {
-        return comImg.items[selectedItemIndex];
-    }
-    return ComImgItem();
-}
-
-
-
-void QGraphicsComImgCanvansItem::deleteSelectItem()
-{
-    if(selectedItemIndex != -1)
-    {
-        comImg.items.removeAt(selectedItemIndex);
-        selectedItemIndex = -1;
-        view->viewport()->update();
-        emit changed(true);
-    }
-}
-
-void QGraphicsComImgCanvansItem::deleteAll()
-{
-    comImg.items.clear();
-    selectedItemIndex = -1;
-    view->viewport()->update();
-    emit changed(true);
-}
-
-void QGraphicsComImgCanvansItem::on_Forward()
-{
-    if(selectedItemIndex != -1)
-    {
-        if(selectedItemIndex + 1 < comImg.items.size())
+        for (int i = selectedItems.size() - 1; i >= 0; --i)
         {
-            comImg.items.swapItemsAt(selectedItemIndex, selectedItemIndex + 1);
-            selectedItemIndex++;
-            view->viewport()->update();
-            emit changed(true);
-        }
-    }
-}
-
-void QGraphicsComImgCanvansItem::on_Backward()
-{
-    if(selectedItemIndex != -1)
-    {
-        if(selectedItemIndex > 0)
-        {
-            comImg.items.swapItemsAt(selectedItemIndex, selectedItemIndex - 1);
-            selectedItemIndex--;
-            view->viewport()->update();
-            emit changed(true);
-        }
-    }
-}
-
-void QGraphicsComImgCanvansItem::on_Top()
-{
-    if(selectedItemIndex != -1)
-    {
-        while (selectedItemIndex + 1 < comImg.items.size())
-        {
-            comImg.items.swapItemsAt(selectedItemIndex, selectedItemIndex + 1);
-            selectedItemIndex++;
+            comImg.items.removeAt(selectedItems[i]);
+            selectedItems.removeAt(i);
         }
         view->viewport()->update();
         emit changed(true);
     }
 }
 
-void QGraphicsComImgCanvansItem::on_Bottom()
+void QGraphicsComImgCanvansItem::on_DeleteAll()
 {
-    if(selectedItemIndex != -1)
+    QMessageBox *cleanDialog = new QMessageBox;
+    cleanDialog->setText(tr("是否清空画布？"));
+    cleanDialog->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    cleanDialog->setDefaultButton(QMessageBox::Yes);
+    cleanDialog->setIcon(QMessageBox::Question);
+    cleanDialog->setButtonText(QMessageBox::Yes, tr("是"));
+    cleanDialog->setButtonText(QMessageBox::No, tr("否"));
+
+    int ret = cleanDialog->exec();
+    delete cleanDialog;
+    if(ret == QMessageBox::Yes)
     {
-        while (selectedItemIndex > 0)
+        comImg.items.clear();
+        selectedItems.clear();
+        view->viewport()->update();
+        emit changed(true);
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_Raise()
+{
+    if(selectedItems.size() == 1)
+    {
+        if(selectedItems[0] + 1 < comImg.items.size())
         {
-            comImg.items.swapItemsAt(selectedItemIndex, selectedItemIndex - 1);
-            selectedItemIndex--;
+            comImg.items.swapItemsAt(selectedItems[0], selectedItems[0] + 1);
+            selectedItems[0]++;
+            view->viewport()->update();
+            emit changed(true);
+        }
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_Lower()
+{
+    if(selectedItems.size() == 1)
+    {
+        if(selectedItems[0] > 0)
+        {
+            comImg.items.swapItemsAt(selectedItems[0], selectedItems[0] - 1);
+            selectedItems[0]--;
+            view->viewport()->update();
+            emit changed(true);
+        }
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_RaiseToTop()
+{
+    if(selectedItems.size() == 1)
+    {
+        while (selectedItems[0] + 1 < comImg.items.size())
+        {
+            comImg.items.swapItemsAt(selectedItems[0], selectedItems[0] + 1);
+            selectedItems[0]++;
+        }
+        view->viewport()->update();
+        emit changed(true);
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_LowerToBottom()
+{
+    if(selectedItems.size() == 1)
+    {
+        while (selectedItems[0] > 0)
+        {
+            comImg.items.swapItemsAt(selectedItems[0], selectedItems[0] - 1);
+            selectedItems[0]--;
         }
         view->viewport()->update();
         emit changed(true);
@@ -559,11 +491,14 @@ void QGraphicsComImgCanvansItem::on_Bottom()
 
 void QGraphicsComImgCanvansItem::on_AlignVCenter()
 {
-    if(selectedItemIndex != -1)
+     if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->x = (comImg.size.width() - img.width()) / 2;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->y = (comImg.size.height() - img.height()) / 2;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -571,11 +506,14 @@ void QGraphicsComImgCanvansItem::on_AlignVCenter()
 
 void QGraphicsComImgCanvansItem::on_AlignHCenter()
 {
-    if(selectedItemIndex != -1)
+     if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->y = (comImg.size.height() - img.height()) / 2;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->x = (comImg.size.width() - img.width()) / 2;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -583,12 +521,15 @@ void QGraphicsComImgCanvansItem::on_AlignHCenter()
 
 void QGraphicsComImgCanvansItem::on_AlignCenter()
 {
-    if(selectedItemIndex != -1)
+     if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->x = (comImg.size.width() - img.width()) / 2;
-        ci->y = (comImg.size.height() - img.height()) / 2;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->x = (comImg.size.width() - img.width()) / 2;
+            ci->y = (comImg.size.height() - img.height()) / 2;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -596,11 +537,14 @@ void QGraphicsComImgCanvansItem::on_AlignCenter()
 
 void QGraphicsComImgCanvansItem::on_MoveUp()
 {
-    if(selectedItemIndex != -1)
+    if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->y--;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->y--;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -608,11 +552,14 @@ void QGraphicsComImgCanvansItem::on_MoveUp()
 
 void QGraphicsComImgCanvansItem::on_MoveDown()
 {
-    if(selectedItemIndex != -1)
+    if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->y++;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->y++;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -620,11 +567,14 @@ void QGraphicsComImgCanvansItem::on_MoveDown()
 
 void QGraphicsComImgCanvansItem::on_MoveLeft()
 {
-    if(selectedItemIndex != -1)
+    if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->x--;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->x--;
+        }
         view->viewport()->update();
         emit changed(true);
     }
@@ -632,13 +582,69 @@ void QGraphicsComImgCanvansItem::on_MoveLeft()
 
 void QGraphicsComImgCanvansItem::on_MoveRight()
 {
-    if(selectedItemIndex != -1)
+    if(!selectedItems.isEmpty())
     {
-        ComImgItem *ci = &comImg.items[selectedItemIndex];
-        QImage img = rd->getImage(ci->id);
-        ci->x++;
+        for (int i = 0; i < selectedItems.size(); i++)
+        {
+            ComImgItem *ci = &comImg.items[selectedItems[i]];
+            QImage img = rd->getImage(ci->id);
+            ci->x++;
+        }
         view->viewport()->update();
         emit changed(true);
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_SetPos()
+{
+    // 获取父窗口指针
+    QWidget *parentWidget = nullptr;
+    if (scene() && scene()->views().size() > 0) {
+        parentWidget = scene()->views().at(0)->window();
+    }
+
+    if (selectedItems.size() == 1)
+    {
+        DialogPosition *dlgPosition = new DialogPosition(parentWidget);
+
+        ComImgItem item = comImg.items[selectedItems[0]];
+        QPoint pos(item.x, item.y);
+        dlgPosition->setDefaultPos(pos);
+        int ret = dlgPosition->exec();
+        if (ret == QDialog::Accepted)
+        {
+            QPoint pos = dlgPosition->getPos();
+            setItemPos(pos);
+        }
+        delete dlgPosition;
+    }
+}
+
+void QGraphicsComImgCanvansItem::on_ResizeCanvas()
+{
+    // 获取父窗口指针
+    QWidget *parentWidget = nullptr;
+    if (scene() && scene()->views().size() > 0) {
+        parentWidget = scene()->views().at(0)->window();
+    }
+
+    DialogResize *dlgResize = new DialogResize(parentWidget);
+    QSize defaultSize = getComImg().size;
+    dlgResize->setDefaultSize(defaultSize);
+    int ret = dlgResize->exec();
+    if(ret == QDialog::Accepted)
+    {
+        QSize size = dlgResize->getSize();
+        resize(size);
+    }
+    delete dlgResize;
+}
+
+void QGraphicsComImgCanvansItem::on_OpenImage()
+{
+    if (selectedItems.size() == 1)
+    {
+        emit openImgTab(rd->getProject(), comImg.items[selectedItems[0]].id);
     }
 }
 
@@ -651,7 +657,7 @@ void QGraphicsComImgCanvansItem::dragEnterEvent(QGraphicsSceneDragDropEvent *eve
         {
             isDragImg = true;
             dragImgId = event->mimeData()->data("bm/id").toInt();
-            selectedItemIndex = -1;
+            selectedItems.clear();
             event->setAccepted(true);
             return;
         }
@@ -688,14 +694,19 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         if(currentPixel != moveLastPixel)
         {
             // TODO：获取指定ID的图片
-            if(selectedItemIndex < comImg.items.size())
+            if (!selectedItems.isEmpty())
             {
-                ComImgItem *item = &comImg.items[selectedItemIndex];
-                item->x += currentPixel.x() - moveLastPixel.x();
-                item->y += currentPixel.y() - moveLastPixel.y();
-
-                view->setCursor((item->x >= comImg.size.width() || item->y >= comImg.size.height()) ? Qt::ForbiddenCursor : Qt::SizeAllCursor);
+                for (int i = 0; i < comImg.items.size(); i++)
+                {
+                    if (selectedItems.contains(i))
+                    {
+                        comImg.items[i].x += currentPixel.x() - moveLastPixel.x();
+                        comImg.items[i].y += currentPixel.y() - moveLastPixel.y();
+                    }
+                }
+                view->setCursor(Qt::SizeAllCursor);
             }
+
             moveLastPixel = currentPixel;
         }
     });
@@ -706,20 +717,28 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
     if(action == ActionNull)
     {
-        Qt::CursorShape cursor = Qt::ArrowCursor;
-        if(isInSizeFDiagArea(point))
+        if (getPointImgIndex(point) == -1)
         {
-            cursor = Qt::SizeFDiagCursor;
+            action = ActionMultiSelect;
+            moveStartPixel = currentPixel;
         }
-        else if(isInSizeVerArea(point))
+        else
         {
-            cursor = Qt::SizeVerCursor;
+            Qt::CursorShape cursor = Qt::ArrowCursor;
+            if(isInSizeFDiagArea(point))
+            {
+                cursor = Qt::SizeFDiagCursor;
+            }
+            else if(isInSizeVerArea(point))
+            {
+                cursor = Qt::SizeVerCursor;
+            }
+            else if(isInSizeHorArea(point))
+            {
+                cursor = Qt::SizeHorCursor;
+            }
+            view->setCursor(cursor);
         }
-        else if(isInSizeHorArea(point))
-        {
-            cursor = Qt::SizeHorCursor;
-        }
-        view->setCursor(cursor);
     }
     else if(action == ActionSelect)
     {
@@ -746,6 +765,10 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         newSize = QSize(currentPixel.x(), comImg.size.height());
         emit updateStatusBarSize(newSize);
     }
+    else if (action == ActionMultiSelect)
+    {
+
+    }
 
     emit updateStatusBarPos(currentPixel);
 }
@@ -755,7 +778,20 @@ void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event
     QPoint point = event->pos().toPoint();
 
     auto leftPressEvent = [=](){
-        selectedItemIndex = getPointImgIndex(point);
+
+        int index = getPointImgIndex(event->pos().toPoint());
+
+        if (index != -1)
+        {
+            if (!selectedItems.contains(index))
+            {
+                selectedItems = {index};
+            }
+        }
+        else
+        {
+            selectedItems.clear();
+        }
 
         if(action == ActionNull)
         {
@@ -771,7 +807,7 @@ void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event
             {
                 action = ActionResizeHor;
             }
-            else if(selectedItemIndex != -1)
+            else if(!selectedItems.isEmpty())
             {
                 action = ActionSelect;
                 moveStartPixel = currentPixel;
@@ -780,9 +816,19 @@ void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event
     };
 
     auto rightPressEvent = [=]() {
-        int itemIndex = getPointImgIndex(point);
-        if (itemIndex != -1)
-            selectedItemIndex = itemIndex;
+        int index = getPointImgIndex(event->pos().toPoint());
+
+        if (index != -1)
+        {
+            if (!selectedItems.contains(index))
+            {
+                selectedItems = {index};
+            }
+        }
+        else
+        {
+            selectedItems.clear();
+        }
     };
 
 
@@ -800,6 +846,21 @@ void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event
 
 void QGraphicsComImgCanvansItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+    auto updateSelectedItems = [&]() {
+        selectedItems.clear();
+        for (int i = 0; i < comImg.items.size(); i++)
+        {
+            auto item = comImg.items[i];
+            QImage img = rd->getImage(item.id);
+            QRect selectRect(moveStartPixel, currentPixel);
+            if (selectRect.contains(QRect(QPoint(item.x, item.y), img.size())))
+            {
+                selectedItems << i;
+            }
+        }
+    };
+
+
     if(action == ActionResizeFDiag || action == ActionResizeVer || action == ActionResizeHor)
     {
         action = ActionNull;
@@ -813,9 +874,14 @@ void QGraphicsComImgCanvansItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *eve
             emit changed(true);
         }
         action = ActionNull;
-        selectedAuxiliaryLine = -1;
         view->setCursor(Qt::ArrowCursor);
     }
+    else if (action == ActionMultiSelect)
+    {
+        updateSelectedItems();
+        action = ActionNull;
+    }
+
     view->viewport()->update();
 
     emitUpdatePreview();
@@ -823,9 +889,54 @@ void QGraphicsComImgCanvansItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *eve
 
 void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
+    auto createAction = [=](QMenu *menu, QString name, QString key, void (QGraphicsComImgCanvansItem::*method)()) {
+        QAction *action = menu->addAction(name);
+        action->setShortcut(QKeySequence(key)); // 快捷键仅显示作用，实际在formcomingedit里的快捷键有效
+        connect(action, &QAction::triggered, this, method);
+    };
+
     QMenu menu;
-    QAction *action1 = menu.addAction("Action 4");
-    QAction *action2 = menu.addAction("Action 5");
+    int itemIndex = getPointImgIndex(event->pos().toPoint());
+
+    if (itemIndex != -1)    // 选中图片
+    {
+        if (selectedItems.size() == 1)
+        {
+            createAction(&menu, tr("打开图片"), "Ctrl+Shift+O", &QGraphicsComImgCanvansItem::on_OpenImage);
+            createAction(&menu, tr("设置位置"), "Ctrl+Shift+P", &QGraphicsComImgCanvansItem::on_SetPos);
+        }
+
+        QCustomMenu *menuMove = new QCustomMenu(tr("移动"));
+        createAction(menuMove, tr("上移"), "Up", &QGraphicsComImgCanvansItem::on_MoveUp);
+        createAction(menuMove, tr("下移"), "Down", &QGraphicsComImgCanvansItem::on_MoveDown);
+        createAction(menuMove, tr("左移"), "Left", &QGraphicsComImgCanvansItem::on_MoveLeft);
+        createAction(menuMove, tr("右移"), "Right", &QGraphicsComImgCanvansItem::on_MoveRight);
+        menu.addMenu(menuMove);
+
+        QMenu *menuLayer = new QMenu(tr("图层"));
+        createAction(menuLayer, tr("移动到顶层"), "Home", &QGraphicsComImgCanvansItem::on_RaiseToTop);
+        createAction(menuLayer, tr("移动到底层"), "End", &QGraphicsComImgCanvansItem::on_LowerToBottom);
+        createAction(menuLayer, tr("上移一层"), "PgUp", &QGraphicsComImgCanvansItem::on_Raise);
+        createAction(menuLayer, tr("下移一层"), "PgDown", &QGraphicsComImgCanvansItem::on_Lower);
+        if (selectedItems.size() == 1)
+            menu.addMenu(menuLayer);
+
+        QMenu *menuAlign = new QMenu(tr("对齐"));
+        createAction(menuAlign, tr("水平对齐"), "Ctrl+Alt+H", &QGraphicsComImgCanvansItem::on_AlignHCenter);
+        createAction(menuAlign, tr("垂直对齐"), "Ctrl+Alt+V", &QGraphicsComImgCanvansItem::on_AlignVCenter);
+        createAction(menuAlign, tr("中心对齐"), "Ctrl+Alt+C", &QGraphicsComImgCanvansItem::on_AlignCenter);
+        menu.addMenu(menuAlign);
+
+        createAction(&menu, tr("删除"), "Delete", &QGraphicsComImgCanvansItem::on_DeleteSelectItem);
+    }
+    else    // 其余空白区域
+    {
+        createAction(&menu, tr("调整画布大小"), "Ctrl+Shift+R", &QGraphicsComImgCanvansItem::on_ResizeCanvas);
+        createAction(&menu, tr("清空画布"), "Ctrl+Shift+X", &QGraphicsComImgCanvansItem::on_DeleteAll);
+    }
+
+
+
 
 
     // 在鼠标右键点击的位置显示菜单
@@ -843,8 +954,19 @@ QGraphicsComImgCanvansItem::QGraphicsComImgCanvansItem(QObject *parent)
     startPoint.setY(Global::scaleWidth + Global::scaleOffset);
     comImg.size = QSize(128, 64);
 
-    this->setAcceptHoverEvents(true);
-    this->setAcceptDrops(true);
+    // 获取mainwindow指针
+    auto getMainWindow = [=]() {
+        QObject *obj = parent;
+        while (1)
+        {
+            if (obj->objectName() == "MainWindow")
+            {
+                return obj;
+            }
+            obj = obj->parent();
+        }
+    };
+    connect(this, SIGNAL(openImgTab(QString, int)), getMainWindow(), SLOT(on_OpenImgTab(QString, int)));
 }
 
 QRectF QGraphicsComImgCanvansItem::boundingRect() const
@@ -865,7 +987,7 @@ void QGraphicsComImgCanvansItem::paint(QPainter *painter, const QStyleOptionGrap
     paintGrid(painter);
     paintItems(painter);
     paintDragItem(painter);
-    paintAuxiliaryLines(painter);
+    paintSelectionBox(painter);
     paintResizePoint(painter);
     paintItemInfo(painter);
     emitUpdatePreview();

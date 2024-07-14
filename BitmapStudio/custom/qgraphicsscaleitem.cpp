@@ -285,6 +285,8 @@ QGraphicsScaleItem::QGraphicsScaleItem(QWidget *parent)
 
     startPoint.setX(Global::scaleWidth + Global::scaleOffset);
     startPoint.setY(Global::scaleWidth + Global::scaleOffset);
+
+    this->setFlag(QGraphicsItem::ItemIsFocusable, false);
 }
 
 QGraphicsScaleItem::~QGraphicsScaleItem()
@@ -307,6 +309,8 @@ void QGraphicsScaleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
     drawScale(painter);
     drawAuxiliaryLines(painter);
 }
+
+
 
 // QPainterPath QGraphicsScaleItem::shape() const
 // {

@@ -4,6 +4,7 @@
 #include <QDragMoveEvent>
 #include <QDragEnterEvent>
 #include <QMenu>
+#include <QShortcut>
 #include <custom/qcustommenu.h>
 #include <gui/dialogresize.h>
 #include <gui/dialogposition.h>
@@ -49,25 +50,7 @@ FormComImgEditor::FormComImgEditor(QWidget *parent) :
 
     ui->graphicsView->setRubberBandSelectionMode(Qt::ContainsItemBoundingRect);
 
-//    initScrollerPos();
 
-    connect(scaleItem, SIGNAL(createAuxLine(Qt::Orientation)), comImgCanvansItem, SLOT(on_CreateAuxLine(Qt::Orientation)));
-    connect(ui->actDelete, SIGNAL(triggered()), comImgCanvansItem, SLOT(deleteSelectItem()));
-    connect(ui->actClean, SIGNAL(triggered()), comImgCanvansItem, SLOT(deleteAll()));
-//    connect(ui->actSave, &QAction::triggered, this, [=]{
-//        emit saveComImg(comImgCanvansItem->getComImg());
-//    });
-    connect(ui->actForward, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_Forward()));
-    connect(ui->actBackward, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_Backward()));
-    connect(ui->actTop, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_Top()));
-    connect(ui->actBottom, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_Bottom()));
-    connect(ui->actAlignHCenter, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_AlignVCenter()));
-    connect(ui->actAlignVCenter, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_AlignHCenter()));
-    connect(ui->actAlignCenter, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_AlignCenter()));
-    connect(ui->actMoveUp, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_MoveUp()));
-    connect(ui->actMoveDown, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_MoveDown()));
-    connect(ui->actMoveLeft, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_MoveLeft()));
-    connect(ui->actMoveRight, SIGNAL(triggered()), comImgCanvansItem, SLOT(on_MoveRight()));
 
 
     connect(this->comImgCanvansItem, SIGNAL(updateStatusBarPos(QPoint)), this->parent()->parent()->parent(), SLOT(on_UpdateStatusBarPos(QPoint)));
@@ -81,11 +64,7 @@ FormComImgEditor::FormComImgEditor(QWidget *parent) :
         emit changed(getProject(), getId(), unsaved);
     });
 
-    addAction(ui->actMoveUp);
-    addAction(ui->actMoveDown);
-    addAction(ui->actMoveLeft);
-    addAction(ui->actMoveRight);
-    addAction(ui->actDelete);
+    initShortCut();
 }
 
 FormComImgEditor::~FormComImgEditor()
@@ -113,6 +92,28 @@ void FormComImgEditor::initScrollerPos()
         ui->graphicsView->horizontalScrollBar()->setSliderPosition(0);
         ui->graphicsView->verticalScrollBar()->setSliderPosition(0);
     }
+}
+
+void FormComImgEditor::initShortCut()
+{
+    auto createShortCut = [=](QString key, void (QGraphicsComImgCanvansItem::*method)()) {
+        QShortcut* shortcut = new QShortcut(QKeySequence(key), this);
+        connect(shortcut, &QShortcut::activated, comImgCanvansItem, method);
+    };
+
+    createShortCut("Up", &QGraphicsComImgCanvansItem::on_MoveUp);
+    createShortCut("Down", &QGraphicsComImgCanvansItem::on_MoveDown);
+    createShortCut("Left", &QGraphicsComImgCanvansItem::on_MoveLeft);
+    createShortCut("Right", &QGraphicsComImgCanvansItem::on_MoveRight);
+    createShortCut("Home", &QGraphicsComImgCanvansItem::on_RaiseToTop);
+    createShortCut("End", &QGraphicsComImgCanvansItem::on_LowerToBottom);
+    createShortCut("PgUp", &QGraphicsComImgCanvansItem::on_Raise);
+    createShortCut("PgDown", &QGraphicsComImgCanvansItem::on_Lower);
+    createShortCut("Ctrl+Alt+V", &QGraphicsComImgCanvansItem::on_AlignVCenter);
+    createShortCut("Ctrl+Alt+H", &QGraphicsComImgCanvansItem::on_AlignHCenter);
+    createShortCut("Ctrl+Alt+C", &QGraphicsComImgCanvansItem::on_AlignCenter);
+    createShortCut("Delete", &QGraphicsComImgCanvansItem::on_DeleteSelectItem);
+    createShortCut("Ctrl+Shift+X", &QGraphicsComImgCanvansItem::on_DeleteAll);
 }
 
 
@@ -170,40 +171,4 @@ void FormComImgEditor::on_LoadComImg(ComImg &comImg, RawData *rd)
 
 
 
-void FormComImgEditor::on_actResize_triggered()
-{
-    DialogResize *dlgResize = new DialogResize(this);
-    QSize defaultSize = comImgCanvansItem->getComImg().size;
-    dlgResize->setDefaultSize(defaultSize);
-    int ret = dlgResize->exec();
-    if(ret == QDialog::Accepted)
-    {
-        QSize size = dlgResize->getSize();
-        comImgCanvansItem->resize(size);
-    }
-    delete dlgResize;
-}
-
-
-void FormComImgEditor::on_actPosition_triggered()
-{
-    DialogPosition *dlgPosition = new DialogPosition(this);
-    QPoint pos = comImgCanvansItem->getSelectedItemPos();
-    dlgPosition->setDefaultPos(pos);
-    int ret = dlgPosition->exec();
-    if (ret == QDialog::Accepted)
-    {
-        QPoint pos = dlgPosition->getPos();
-        comImgCanvansItem->setItemPos(pos);
-    }
-    delete dlgPosition;
-}
-
-
-void FormComImgEditor::on_actOpen_triggered()
-{
-    QString project = comImgCanvansItem->getProject();
-    int id = comImgCanvansItem->getSelectedItem().id;
-    emit openImgTab(project, id);
-}
 
