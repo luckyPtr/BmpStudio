@@ -5,6 +5,7 @@
 #include <QScrollBar>
 #include <QMenu>
 #include <QMessageBox>
+#include <QKeyEvent>
 #include "qcustommenu.h"
 #include "gui/dialogresize.h"
 #include "gui/dialogposition.h"
@@ -216,7 +217,8 @@ void QGraphicsComImgCanvansItem::paintSelectionBox(QPainter *painter)
 {
     if (action == ActionMultiSelect)
     {
-        QPen pen(Qt::yellow);
+        QColor color(Global::selectionBoxColor);
+        QPen pen(color);
         pen.setWidth(1);
         pen.setStyle(Qt::DotLine);
         painter->setPen(pen);
@@ -754,8 +756,11 @@ void QGraphicsComImgCanvansItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     {
         if (getPointImgIndex(currentPoint) == -1)
         {
-            action = ActionMultiSelect;
-            moveStartPixel = currentPixel;
+            if (currentPoint.x() > startPoint.x() && currentPoint.y() > startPoint.y())
+            {
+                action = ActionMultiSelect;
+                moveStartPixel = currentPixel;
+            }
         }
         else
         {
@@ -820,7 +825,14 @@ void QGraphicsComImgCanvansItem::mousePressEvent(QGraphicsSceneMouseEvent *event
         {
             if (!selectedItems.contains(index))
             {
-                selectedItems = {index};
+                if (key == Qt::Key_Control) // 按住Ctrl的时候多选，否则单选
+                {
+                    selectedItems << index;
+                }
+                else
+                {
+                    selectedItems = {index};
+                }
             }
         }
         else
@@ -977,6 +989,16 @@ void QGraphicsComImgCanvansItem::contextMenuEvent(QGraphicsSceneContextMenuEvent
     // 在鼠标右键点击的位置显示菜单
     menu.exec(event->screenPos());
 
+}
+
+void QGraphicsComImgCanvansItem::keyPressEvent(QKeyEvent *event)
+{
+    key = static_cast<Qt::Key>(event->key());
+}
+
+void QGraphicsComImgCanvansItem::keyReleaseEvent(QKeyEvent *event)
+{
+    key = Qt::Key_unknown;
 }
 
 void QGraphicsComImgCanvansItem::on_MouseMove(QPoint point)

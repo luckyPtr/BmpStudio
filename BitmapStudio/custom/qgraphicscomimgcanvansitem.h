@@ -28,6 +28,7 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
     RawData *rd = nullptr;
 
     Action action = ActionNull;
+    Qt::Key key = Qt::Key_unknown;
     QSize newSize;
     QVector<int> selectedItems;
     QPoint currentPoint;
@@ -77,6 +78,8 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
 public slots:
     void on_MouseMove(QPoint);
     void on_DeleteSelectItem();    // 删除选中的图片

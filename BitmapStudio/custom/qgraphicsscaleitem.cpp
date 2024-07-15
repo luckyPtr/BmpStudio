@@ -498,6 +498,43 @@ void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     }
 }
 
+void QGraphicsScaleItem::keyPressEvent(QKeyEvent *event)
+{
+    // 转发
+    //sendEventToOtherItems(event);
+    QList<QGraphicsItem *> items = scene()->items();
+    foreach (auto item, items)
+    {
+        if (item != this)
+        {
+            QGraphicsObject* obj = qgraphicsitem_cast<QGraphicsObject*>(item);
+            if (obj) {
+                QEvent* eventToSend = reinterpret_cast<QEvent*>(event);
+                scene()->sendEvent(obj, eventToSend);
+            }
+        }
+    }
+    QGraphicsObject::keyPressEvent(event);
+
+}
+
+void QGraphicsScaleItem::keyReleaseEvent(QKeyEvent *event)
+{
+    QList<QGraphicsItem *> items = scene()->items();
+    foreach (auto item, items)
+    {
+        if (item != this)
+        {
+            QGraphicsObject* obj = qgraphicsitem_cast<QGraphicsObject*>(item);
+            if (obj) {
+                QEvent* eventToSend = reinterpret_cast<QEvent*>(event);
+                scene()->sendEvent(obj, eventToSend);
+            }
+        }
+    }
+    QGraphicsObject::keyReleaseEvent(event);
+}
+
 void QGraphicsScaleItem::on_DeleteAllGuides()
 {
     auxiliaryLines.clear();

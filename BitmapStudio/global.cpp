@@ -12,6 +12,7 @@ int Global::pixelColor_0 = 0x495028;
 int Global::gridColor = 0x303030;
 int Global::itemBoundColor = 0x808080;
 int Global::selectedItemBoundColor = 0x00FFFF;
+int Global::selectionBoxColor = 0xFFFF00;
 int Global::guidesColor = 0xFFFF00;
 int Global::selectedGuidesColor = 0xFF8C00;
 bool Global::editMode = false;

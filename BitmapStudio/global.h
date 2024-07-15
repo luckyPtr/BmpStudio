@@ -20,8 +20,9 @@ public:
     static int pixelColor_0;       // 像素编辑像素值为0的颜色
     static int pixelColor_1;
     static int gridColor;          // 像素编辑器网格颜色
-    static int itemBoundColor;
-    static int selectedItemBoundColor;
+    static int itemBoundColor;      // 未选择的组合图边框颜色
+    static int selectedItemBoundColor;  // 选择的组合图边框颜色
+    static int selectionBoxColor;       // 选择框颜色
     static bool editMode;           // 编辑模式
 
     static int exportImgColor_0;    // 导出图片的像素颜色
