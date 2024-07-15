@@ -49,7 +49,7 @@ class QGraphicsComImgCanvansItem : public QGraphicsItemBase
     void paintItemInfo(QPainter *painter);      // 绘制选择的图形的名称、位置等信息
     QPoint pointToPixel(QPoint point);  // 坐标转换为画布上的像素坐标
     int getPointImgIndex(QPoint point);
-
+    QRect selectItemsBoundingRect();  // 选择的组合图的边界的矩形边框
     void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
 
     void emitUpdatePreview();   // 更新预览显示显示

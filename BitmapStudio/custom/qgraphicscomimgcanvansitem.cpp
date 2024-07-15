@@ -330,6 +330,24 @@ int QGraphicsComImgCanvansItem::getPointImgIndex(QPoint point)
     return index;
 }
 
+QRect QGraphicsComImgCanvansItem::selectItemsBoundingRect()
+{
+    auto getRect = [=](int i) {
+        ComImgItem item = comImg.items[selectedItems[i]];
+        QPoint leftTopPoint(item.x, item.y);
+        QSize size = rd->getImage(item.id).size();
+        return QRect(leftTopPoint, size);
+    };
+
+    QRect boundingRect = getRect(0);
+    foreach (auto i, selectedItems)
+    {
+        boundingRect = boundingRect.united(getRect(i));
+    }
+
+    return boundingRect;
+}
+
 
 
 void QGraphicsComImgCanvansItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
@@ -492,14 +510,16 @@ void QGraphicsComImgCanvansItem::on_LowerToBottom()
 
 void QGraphicsComImgCanvansItem::on_AlignVCenter()
 {
-     if(!selectedItems.isEmpty())
+    if(!selectedItems.isEmpty())
     {
+        QRect rect = selectItemsBoundingRect();
+        int d = (comImg.size.height() - rect.height()) / 2 - rect.y();
         for (int i = 0; i < selectedItems.size(); i++)
         {
             ComImgItem *ci = &comImg.items[selectedItems[i]];
-            QImage img = rd->getImage(ci->id);
-            ci->y = (comImg.size.height() - img.height()) / 2;
+            ci->y += d;
         }
+
         view->viewport()->update();
         emit changed(true);
     }
@@ -507,14 +527,16 @@ void QGraphicsComImgCanvansItem::on_AlignVCenter()
 
 void QGraphicsComImgCanvansItem::on_AlignHCenter()
 {
-     if(!selectedItems.isEmpty())
+    if(!selectedItems.isEmpty())
     {
+        QRect rect = selectItemsBoundingRect();
+        int d = (comImg.size.width() - rect.width()) / 2 - rect.x();
         for (int i = 0; i < selectedItems.size(); i++)
         {
             ComImgItem *ci = &comImg.items[selectedItems[i]];
-            QImage img = rd->getImage(ci->id);
-            ci->x = (comImg.size.width() - img.width()) / 2;
+            ci->x += d;
         }
+
         view->viewport()->update();
         emit changed(true);
     }
@@ -522,15 +544,18 @@ void QGraphicsComImgCanvansItem::on_AlignHCenter()
 
 void QGraphicsComImgCanvansItem::on_AlignCenter()
 {
-     if(!selectedItems.isEmpty())
+    if(!selectedItems.isEmpty())
     {
+        QRect rect = selectItemsBoundingRect();
+        int dX = (comImg.size.width() - rect.width()) / 2 - rect.x();
+        int dY = (comImg.size.height() - rect.height()) / 2 - rect.y();
         for (int i = 0; i < selectedItems.size(); i++)
         {
             ComImgItem *ci = &comImg.items[selectedItems[i]];
-            QImage img = rd->getImage(ci->id);
-            ci->x = (comImg.size.width() - img.width()) / 2;
-            ci->y = (comImg.size.height() - img.height()) / 2;
+            ci->x += dX;
+            ci->y += dY;
         }
+
         view->viewport()->update();
         emit changed(true);
     }
