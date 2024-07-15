@@ -114,6 +114,7 @@ void FormComImgEditor::initShortCut()
     createShortCut("Ctrl+Alt+C", &QGraphicsComImgCanvansItem::on_AlignCenter);
     createShortCut("Delete", &QGraphicsComImgCanvansItem::on_DeleteSelectItem);
     createShortCut("Ctrl+Shift+X", &QGraphicsComImgCanvansItem::on_DeleteAll);
+    createShortCut("Ctrl+A", &QGraphicsComImgCanvansItem::on_SelectAll);
 }
 
 

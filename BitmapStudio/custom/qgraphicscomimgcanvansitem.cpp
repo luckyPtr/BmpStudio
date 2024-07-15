@@ -621,6 +621,18 @@ void QGraphicsComImgCanvansItem::on_MoveRight()
     }
 }
 
+void QGraphicsComImgCanvansItem::on_SelectAll()
+{
+    selectedItems.clear();
+    for (int i = 0; i < comImg.items.size(); i++)
+    {
+        selectedItems << i;
+    }
+
+    view->viewport()->update();
+    emit changed(true);
+}
+
 void QGraphicsComImgCanvansItem::on_SetPos()
 {
     // 获取父窗口指针
