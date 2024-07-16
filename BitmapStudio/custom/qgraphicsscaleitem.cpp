@@ -256,8 +256,8 @@ int QGraphicsScaleItem::getNearGuide(QPoint point)
 }
 
 
-
-void QGraphicsScaleItem::sendEventToOtherItems(QGraphicsSceneMouseEvent *event)
+template <typename T>
+void QGraphicsScaleItem::sendEventToOtherItems(T *event)
 {
     QList<QGraphicsItem *> items = scene()->items();
     foreach (auto item, items)
@@ -287,6 +287,7 @@ QGraphicsScaleItem::QGraphicsScaleItem(QWidget *parent)
     startPoint.setY(Global::scaleWidth + Global::scaleOffset);
 
     this->setFlag(QGraphicsItem::ItemIsFocusable, false);
+    setAcceptDrops(true);
 }
 
 QGraphicsScaleItem::~QGraphicsScaleItem()
@@ -308,6 +309,26 @@ void QGraphicsScaleItem::paint(QPainter *painter, const QStyleOptionGraphicsItem
 
     drawAuxiliaryLines(painter);
     drawScale(painter);
+}
+
+void QGraphicsScaleItem::dragEnterEvent(QGraphicsSceneDragDropEvent *event)
+{
+    sendEventToOtherItems(event);
+}
+
+void QGraphicsScaleItem::dragLeaveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    sendEventToOtherItems(event);
+}
+
+void QGraphicsScaleItem::dropEvent(QGraphicsSceneDragDropEvent *event)
+{
+    sendEventToOtherItems(event);
+}
+
+void QGraphicsScaleItem::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
+{
+    sendEventToOtherItems(event);
 }
 
 
@@ -487,51 +508,19 @@ void QGraphicsScaleItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     }
     else
     {
-        QList<QGraphicsItem *> items = scene()->items();
-        foreach (auto item, items)
-        {
-            if (item != this)
-            {
-                scene()->sendEvent(item, event);
-            }
-        }
+        sendEventToOtherItems(event);
     }
 }
 
 void QGraphicsScaleItem::keyPressEvent(QKeyEvent *event)
 {
-    // 转发
-    //sendEventToOtherItems(event);
-    QList<QGraphicsItem *> items = scene()->items();
-    foreach (auto item, items)
-    {
-        if (item != this)
-        {
-            QGraphicsObject* obj = qgraphicsitem_cast<QGraphicsObject*>(item);
-            if (obj) {
-                QEvent* eventToSend = reinterpret_cast<QEvent*>(event);
-                scene()->sendEvent(obj, eventToSend);
-            }
-        }
-    }
+    sendEventToOtherItems(reinterpret_cast<QEvent*>(event));
     QGraphicsObject::keyPressEvent(event);
-
 }
 
 void QGraphicsScaleItem::keyReleaseEvent(QKeyEvent *event)
 {
-    QList<QGraphicsItem *> items = scene()->items();
-    foreach (auto item, items)
-    {
-        if (item != this)
-        {
-            QGraphicsObject* obj = qgraphicsitem_cast<QGraphicsObject*>(item);
-            if (obj) {
-                QEvent* eventToSend = reinterpret_cast<QEvent*>(event);
-                scene()->sendEvent(obj, eventToSend);
-            }
-        }
-    }
+    sendEventToOtherItems(reinterpret_cast<QEvent*>(event));
     QGraphicsObject::keyReleaseEvent(event);
 }
 

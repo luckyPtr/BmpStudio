@@ -38,7 +38,8 @@ private:
     bool isHorizontalScale(QPoint point);   // 是否在水平刻度线
     bool isVerticalScale(QPoint point);     // 是否在垂直的刻度线区域内
     int getNearGuide(QPoint point);         // 获取附近的参考线
-    void sendEventToOtherItems(QGraphicsSceneMouseEvent *event);
+    template <typename T>
+    void sendEventToOtherItems(T *event);
     QPoint pointToPixel(QPoint point);  // 转换为画布上的像素坐标
 public:
     QGraphicsScaleItem(QWidget *parent = nullptr);
@@ -47,7 +48,10 @@ public:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = nullptr) Q_DECL_OVERRIDE;
     //QPainterPath shape() const Q_DECL_OVERRIDE;
 protected:
-
+    void dragEnterEvent(QGraphicsSceneDragDropEvent *event) override;
+    void dragLeaveEvent(QGraphicsSceneDragDropEvent *event) override;
+    void dropEvent(QGraphicsSceneDragDropEvent *event) override;//处理drop
+    void dragMoveEvent(QGraphicsSceneDragDropEvent *event) override;
 public slots:
     void mouseMove(QPoint point);
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;

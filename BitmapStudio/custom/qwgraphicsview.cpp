@@ -52,4 +52,5 @@ QWGraphicsView::QWGraphicsView(QWidget *parent)
 {
     Q_UNUSED(parent)
     setMouseTracking(true);    // 只有打开鼠标追踪功能，鼠标移动才能触发mouseMoveEvent
+    setAcceptDrops(true);
 }
