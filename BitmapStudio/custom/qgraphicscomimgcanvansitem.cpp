@@ -76,39 +76,60 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
     // 绘制图形外框
     auto paintBound = ([=](int x0, int y0, QSize size, int index){
         QPen pen;
-        pen.setColor(selectedItems.contains(index) ? Global::selectedItemBoundColor : Global::itemBoundColor);
+        pen.setColor(Global::itemBoundColor);
+        pen.setWidth(2);
+        painter->setPen(pen);
+
+        QRect rect(startPoint.x() + x0 * Global::pixelSize, startPoint.y() + y0 * Global::pixelSize, Global::pixelSize * size.width() + 1, Global::pixelSize * size.height() + 1);
+        painter->drawRect(rect);
+    });
+
+    // 绘制图形外框
+    auto paintSelectItemBound = ([=](int x0, int y0, QSize size, int index){
+        QPen pen;
+        pen.setColor(Global::selectedItemBoundColor);
         pen.setWidth(2);
         painter->setPen(pen);
 
         QRect rect(startPoint.x() + x0 * Global::pixelSize, startPoint.y() + y0 * Global::pixelSize, Global::pixelSize * size.width() + 1, Global::pixelSize * size.height() + 1);
         painter->drawRect(rect);
 
-        // 绘制选中图形
-        if(selectedItems.contains(index))
-        {
-            // 选择的图形高亮
-            QBrush brush(QColor(0, 255, 255, 16));
-            painter->fillRect(rect, brush);
-            QPoint pointTopMiddle(startPoint.x() + x0 * Global::pixelSize + size.width() * Global::pixelSize / 2 - 1, startPoint.y() + y0 * Global::pixelSize - 3);
-            QPoint pointBottomMiddle(pointTopMiddle.x(), pointTopMiddle.y() + size.height() * Global::pixelSize + 5);
-            QPoint pointLeftMiddle(startPoint.x() + x0 * Global::pixelSize - 3, startPoint.y() + y0 * Global::pixelSize + size.height() * Global::pixelSize / 2 - 1);
-            QPoint pointRightMiddle(pointLeftMiddle.x() + size.width() * Global::pixelSize + 5, pointLeftMiddle.y());
-            // 四边中点
-            brush.setColor(Global::selectedItemBoundColor);
-            painter->fillRect(QRect(pointTopMiddle, QSize(3, 3)), brush);
-            painter->fillRect(QRect(pointBottomMiddle, QSize(3, 3)), brush);
-            painter->fillRect(QRect(pointLeftMiddle, QSize(3, 3)), brush);
-            painter->fillRect(QRect(pointRightMiddle, QSize(3, 3)), brush);
-            //painter->drawLine(pointLeftMiddle, QPoint(pointLeftMiddle.x() + 200, pointLeftMiddle.y()));
-        }
+        // 选择的图形高亮
+        QBrush brush(QColor(0, 255, 255, 16));
+        painter->fillRect(rect, brush);
+        QPoint pointTopMiddle(startPoint.x() + x0 * Global::pixelSize + size.width() * Global::pixelSize / 2 - 1, startPoint.y() + y0 * Global::pixelSize - 3);
+        QPoint pointBottomMiddle(pointTopMiddle.x(), pointTopMiddle.y() + size.height() * Global::pixelSize + 5);
+        QPoint pointLeftMiddle(startPoint.x() + x0 * Global::pixelSize - 3, startPoint.y() + y0 * Global::pixelSize + size.height() * Global::pixelSize / 2 - 1);
+        QPoint pointRightMiddle(pointLeftMiddle.x() + size.width() * Global::pixelSize + 5, pointLeftMiddle.y());
+        // 四边中点
+        brush.setColor(Global::selectedItemBoundColor);
+        painter->fillRect(QRect(pointTopMiddle, QSize(3, 3)), brush);
+        painter->fillRect(QRect(pointBottomMiddle, QSize(3, 3)), brush);
+        painter->fillRect(QRect(pointLeftMiddle, QSize(3, 3)), brush);
+        painter->fillRect(QRect(pointRightMiddle, QSize(3, 3)), brush);
     });
 
+    // 绘制未选中的图片外框
     for(int i = 0; i < comImg.items.size(); i++)
     {
-        ComImgItem item = comImg.items[i];
-        QImage img = rd->getImage(item.id);
-        paintItem(item.x, item.y, img);
-        paintBound(item.x, item.y, img.size(), i);
+        if (!selectedItems.contains(i))
+        {
+            ComImgItem item = comImg.items[i];
+            QImage img = rd->getImage(item.id);
+            paintItem(item.x, item.y, img);
+            paintBound(item.x, item.y, img.size(), i);
+        }
+    }
+    // 绘制选中的图片外框
+    for(int i = 0; i < comImg.items.size(); i++)
+    {
+        if (selectedItems.contains(i))
+        {
+            ComImgItem item = comImg.items[i];
+            QImage img = rd->getImage(item.id);
+            paintItem(item.x, item.y, img);
+            paintSelectItemBound(item.x, item.y, img.size(), i);
+        }
     }
 }
 
