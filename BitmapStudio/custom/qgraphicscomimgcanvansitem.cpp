@@ -74,7 +74,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
     });
 
     // 绘制图形外框
-    auto paintBound = ([=](int x0, int y0, QSize size, int index){
+    auto paintBound = ([=](int x0, int y0, QSize size){
         QPen pen;
         pen.setColor(Global::itemBoundColor);
         pen.setWidth(2);
@@ -85,7 +85,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
     });
 
     // 绘制图形外框
-    auto paintSelectItemBound = ([=](int x0, int y0, QSize size, int index){
+    auto paintSelectItemBound = ([=](int x0, int y0, QSize size){
         QPen pen;
         pen.setColor(Global::selectedItemBoundColor);
         pen.setWidth(2);
@@ -117,7 +117,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
             ComImgItem item = comImg.items[i];
             QImage img = rd->getImage(item.id);
             paintItem(item.x, item.y, img);
-            paintBound(item.x, item.y, img.size(), i);
+            paintBound(item.x, item.y, img.size());
         }
     }
     // 绘制选中的图片外框
@@ -128,7 +128,7 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
             ComImgItem item = comImg.items[i];
             QImage img = rd->getImage(item.id);
             paintItem(item.x, item.y, img);
-            paintSelectItemBound(item.x, item.y, img.size(), i);
+            paintSelectItemBound(item.x, item.y, img.size());
         }
     }
 }
@@ -652,6 +652,35 @@ void QGraphicsComImgCanvansItem::on_SelectAll()
         selectedItems << i;
     }
 
+    view->viewport()->update();
+    emit changed(true);
+}
+
+void QGraphicsComImgCanvansItem::on_SwitchSelectedItem()
+{
+    if (selectedItems.size() == 0)
+    {
+        if (comImg.items.size() > 0)
+        {
+            selectedItems = {0};
+        }
+    }
+    else
+    {
+        int index = selectedItems[0];
+        if (++index >= comImg.items.size())
+        {
+            index = 0;
+        }
+        selectedItems = {index};
+    }
+    view->viewport()->update();
+    emit changed(true);
+}
+
+void QGraphicsComImgCanvansItem::on_SelectNone()
+{
+    selectedItems.clear();
     view->viewport()->update();
     emit changed(true);
 }

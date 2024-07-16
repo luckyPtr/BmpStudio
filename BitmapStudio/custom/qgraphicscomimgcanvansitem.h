@@ -96,6 +96,8 @@ public slots:
     void on_MoveLeft();
     void on_MoveRight();
     void on_SelectAll();
+    void on_SwitchSelectedItem();
+    void on_SelectNone();
     void on_SetPos();
     void on_ResizeCanvas();
     void on_OpenImage();

@@ -96,7 +96,7 @@ void FormComImgEditor::initScrollerPos()
 
 void FormComImgEditor::initShortCut()
 {
-    auto createShortCut = [=](QString key, void (QGraphicsComImgCanvansItem::*method)()) {
+    auto createShortCut = [=](auto key, void (QGraphicsComImgCanvansItem::*method)()) {
         QShortcut* shortcut = new QShortcut(QKeySequence(key), this);
         connect(shortcut, &QShortcut::activated, comImgCanvansItem, method);
     };
@@ -115,6 +115,8 @@ void FormComImgEditor::initShortCut()
     createShortCut("Delete", &QGraphicsComImgCanvansItem::on_DeleteSelectItem);
     createShortCut("Ctrl+Shift+X", &QGraphicsComImgCanvansItem::on_DeleteAll);
     createShortCut("Ctrl+A", &QGraphicsComImgCanvansItem::on_SelectAll);
+    createShortCut("Tab", &QGraphicsComImgCanvansItem::on_SwitchSelectedItem);
+    createShortCut("Esc", &QGraphicsComImgCanvansItem::on_SelectNone);
 }
 
 
