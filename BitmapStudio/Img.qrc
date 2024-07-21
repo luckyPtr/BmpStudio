@@ -68,5 +68,7 @@
         <file>Image/Toolbar/Save.svg</file>
         <file>Image/Toolbar/SaveAll.svg</file>
         <file>Image/PixelEditor/Position.svg</file>
+        <file>Image/Cursor/Pencil.svg</file>
+        <file>Image/Cursor/Eraser.svg</file>
     </qresource>
 </RCC>

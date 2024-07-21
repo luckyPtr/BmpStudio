@@ -2,7 +2,7 @@
 #define QGRAPHICSCANVASITEM_H
 
 #include "custom/qgraphicsitembase.h"
-
+#include <QCursor>
 
 
 class QGraphicsCanvasItem : public QGraphicsItemBase
@@ -18,7 +18,6 @@ private:
         ActionMove,
         ActionWrite,
         ActionErase,
-        ActionEdit,
     };
 
     QGraphicsView *view;
@@ -29,6 +28,8 @@ private:
     QPoint moveStartPixel;  // 开始移动画布的坐标(像素)
     QPoint moveLastPixel;   // 移动图元上一次所在的坐标(像素)
     QSize newSize;          // 调整画布大小的新的大小
+    QCursor cursorPencil;
+    QCursor cursorEraser;
 
     QPoint pointToPixel(QPoint point);  // 坐标转换为画布上的像素坐标
     bool isInSizeVerArea(QPoint point); // 是否处于垂直调整画布大小的区域内
@@ -47,8 +48,6 @@ private:
     void drawPoint(QImage &img, QPoint point, bool dot);
     void drawLine(QImage &img, QPoint point1, QPoint point2, bool dot);
 
-    void paintAuxiliaryLines(QPainter *painter);
-    int getPointAuxLineIndex(QPoint point);
 
 public:
     enum Mode

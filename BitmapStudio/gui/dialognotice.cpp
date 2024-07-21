@@ -100,3 +100,4 @@ void DialogNotice::timerEvent(QTimerEvent *event)
         }
     }
 }
+

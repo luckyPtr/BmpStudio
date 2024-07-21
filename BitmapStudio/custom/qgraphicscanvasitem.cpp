@@ -267,93 +267,7 @@ void QGraphicsCanvasItem::drawLine(QImage &img, QPoint point1, QPoint point2, bo
     emit changed(true);
 }
 
-void QGraphicsCanvasItem::paintAuxiliaryLines(QPainter *painter)
-{
-    if(QGraphicsCanvasItem::AuxiliaryLine::hide)
-    {
-        return;
-    }
 
-    QPen pen(QColor(255,105,180));
-//    pen.setStyle(Qt::DotLine);
-    painter->setPen(pen);
-
-    auto paintLine = [=](Qt::Orientation dir, int scale){
-        if(dir == Qt::Horizontal)
-        {
-            painter->drawLine(startPoint.x(), startPoint.y() + scale * Global::pixelSize, startPoint.x() + image.width() * Global::pixelSize, startPoint.y() + scale * Global::pixelSize);
-        }
-        else
-        {
-            painter->drawLine(startPoint.x() + scale * Global::pixelSize, startPoint.y(), startPoint.x() + scale * Global::pixelSize, startPoint.y() + image.height() * Global::pixelSize);
-        }
-    };
-
-    foreach(auto line, auxiliaryLines)
-    {
-        paintLine(line.dir, line.scale);
-    }
-
-#if AUX_LINE_SCALE
-    auto paintLinePos = [=](AuxiliaryLine line) {
-        painter->setRenderHints(QPainter::Antialiasing);    // 开启抗锯齿
-        if(line.scale >= 0)
-        {
-            QPen pen(QColor(247, 247, 247, 200));
-            QBrush brush;
-            brush.setColor(QColor(247, 247, 247, 200));
-            brush.setStyle(Qt::SolidPattern);
-            painter->setBrush(brush);
-            painter->setPen(pen);
-            QPoint p;
-            if(line.dir == Qt::Horizontal)
-            {
-                p = QPoint(startPoint.x() + 10, startPoint.y() + line.scale * Global::pixelSize + 5);
-            }
-            else
-            {
-                p = QPoint(startPoint.x() + line.scale * Global::pixelSize + 10, startPoint.y() + 5);
-            }
-
-            QRect rect(p, QSize(30, 16));
-            painter->drawRoundedRect(rect, 3, 3);
-            pen.setColor(Global::gridColor);
-            painter->setPen(pen);
-            painter->drawText(rect, Qt::AlignCenter, QString::asprintf("%d", line.scale));
-        }
-        painter->setRenderHints(QPainter::Antialiasing, false);
-    };
-
-    if(selectedAuxiliaryLine != -1)
-    {
-        paintLinePos(auxiliaryLines.at(selectedAuxiliaryLine));
-    }
-#endif
-}
-
-int QGraphicsCanvasItem::getPointAuxLineIndex(QPoint point)
-{
-    int index = -1;
-    for(int i = 0; i < auxiliaryLines.size(); i++)
-    {
-        QRect lineRect;
-        AuxiliaryLine auxLine = auxiliaryLines[i];
-        if(auxLine.dir == Qt::Horizontal)
-        {
-            lineRect.setRect(startPoint.x(), startPoint.y() + auxLine.scale * Global::pixelSize - 2, image.width() * Global::pixelSize, 5);
-        }
-        else
-        {
-            lineRect.setRect(startPoint.x() + auxLine.scale * Global::pixelSize - 2, startPoint.y(), 5, image.height() * Global::pixelSize);
-        }
-        if(lineRect.contains(point))
-        {
-            index = i;
-        }
-    }
-
-    return index;
-}
 
 
 
@@ -366,6 +280,12 @@ QGraphicsCanvasItem::QGraphicsCanvasItem(QWidget *parent)
     action = ActionNull;
 
     connect(view, SIGNAL(mouseMovePoint(QPoint)), this, SLOT(on_MouseMove(QPoint)));
+
+    QPixmap cursorPencilPixmap(":/Image/Cursor/Pencil.svg");
+    cursorPencil = QCursor(cursorPencilPixmap, 0, 0);
+
+    QPixmap cursorEraserPixmap(":/Image/Cursor/Eraser.svg");
+    cursorEraser = QCursor(cursorEraserPixmap, 0, 0);
 }
 
 QRectF QGraphicsCanvasItem::boundingRect() const
@@ -481,11 +401,6 @@ void QGraphicsCanvasItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
         }
     }
 
-
-
-
-    paintAuxiliaryLines(painter);
-
     emit updatePreview(image);
 }
 
@@ -578,7 +493,6 @@ void QGraphicsCanvasItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
 void QGraphicsCanvasItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    //qDebug() << event->scenePos() << event->lastScenePos();
     QPoint point = pointToPixel(event->pos().toPoint());
     QPoint lastPoint = pointToPixel(event->lastPos().toPoint());
     if(action == ActionWrite)
@@ -630,12 +544,14 @@ void QGraphicsCanvasItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         {
             resizeImage(image, newSize);
             view->scene()->setSceneRect(QRectF(0, 0, image.width() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset, image.height() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset));
+            view->setCursor(Qt::ArrowCursor);
         }
         else if(action == ActionMove)
         {
             moveImage(image, currentPixel.x() - moveStartPixel.x(), currentPixel.y() - moveStartPixel.y());
+            view->setCursor(Qt::ArrowCursor);
         }
-        view->setCursor(Qt::ArrowCursor);
+
         action = ActionNull;
     }
     view->viewport()->update();
@@ -649,7 +565,21 @@ void QGraphicsCanvasItem::on_MouseMove(QPoint point)
     currentPixel.setX((currentPoint.x() - startPoint.x()) / Global::pixelSize);
     currentPixel.setY((currentPoint.y() - startPoint.y()) / Global::pixelSize);
 
-    if(action == ActionNull)
+    qDebug() << action;
+    if (Global::editMode)
+    {
+        if (action == ActionErase)
+        {
+            view->setCursor(cursorEraser);
+            qDebug() << "eraser";
+        }
+        else
+        {
+            view->setCursor(cursorPencil);
+            qDebug() << "pencil";
+        }
+    }
+    else if(action == ActionNull)
     {
         Qt::CursorShape cursor = Qt::ArrowCursor;
         if(isInSizeFDiagArea(point))
@@ -666,7 +596,6 @@ void QGraphicsCanvasItem::on_MouseMove(QPoint point)
         }
         view->setCursor(cursor);
     }
-
 
 
     emit updateStatusBarPos(currentPixel);
