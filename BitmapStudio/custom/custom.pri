@@ -2,6 +2,7 @@ HEADERS += \
     $$PWD/customtab.h \
     $$PWD/customtabwidget.h \
     $$PWD/highlighter.h \
+    $$PWD/imgeditorpixmapgen.h \
     $$PWD/imgprevirewer.h \
     $$PWD/latticeshow.h \
     $$PWD/qcustommenu.h \
@@ -22,6 +23,7 @@ SOURCES += \
     $$PWD/customtab.cpp \
     $$PWD/customtabwidget.cpp \
     $$PWD/highlighter.cpp \
+    $$PWD/imgeditorpixmapgen.cpp \
     $$PWD/imgprevirewer.cpp \
     $$PWD/latticeshow.cpp \
     $$PWD/qcustommenu.cpp \

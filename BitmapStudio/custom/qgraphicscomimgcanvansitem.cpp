@@ -112,11 +112,11 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
     // 绘制未选中的图片外框
     for(int i = 0; i < comImg.items.size(); i++)
     {
+        ComImgItem item = comImg.items[i];
+        QImage img = rd->getImage(item.id);
+        paintItem(item.x, item.y, img);
         if (!selectedItems.contains(i))
         {
-            ComImgItem item = comImg.items[i];
-            QImage img = rd->getImage(item.id);
-            paintItem(item.x, item.y, img);
             paintBound(item.x, item.y, img.size());
         }
     }
@@ -127,7 +127,6 @@ void QGraphicsComImgCanvansItem::paintItems(QPainter *painter)
         {
             ComImgItem item = comImg.items[i];
             QImage img = rd->getImage(item.id);
-            paintItem(item.x, item.y, img);
             paintSelectItemBound(item.x, item.y, img.size());
         }
     }

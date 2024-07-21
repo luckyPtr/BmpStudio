@@ -35,7 +35,6 @@ FormPixelEditor::FormPixelEditor(QWidget *parent) :
 
     ui->graphicsView->setRubberBandSelectionMode(Qt::ContainsItemBoundingRect);
 
-    connect(scaleItem, SIGNAL(createAuxLine(Qt::Orientation)), scanvasItem, SLOT(on_CreateAuxLine(Qt::Orientation)));
     connect(ui->graphicsView, SIGNAL(paint()), this, SLOT(paintView()));    // todo Lambda
     connect(ui->actReserve, SIGNAL(triggered()), scanvasItem, SLOT(on_Reserve()));
     connect(ui->actCenter, SIGNAL(triggered()), scanvasItem, SLOT(on_AlignCenter()));

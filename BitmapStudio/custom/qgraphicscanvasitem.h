@@ -18,9 +18,7 @@ private:
         ActionMove,
         ActionWrite,
         ActionErase,
-        ActionMeasure,
-        ActionSelectAuxiliaryLine,
-        ActionMoveAuxiliaryLine
+        ActionEdit,
     };
 
     QGraphicsView *view;
@@ -46,8 +44,8 @@ private:
     void rotateLeft(QImage &img);
     void rotateRight(QImage &img);
     void getMargin(int &up, int &down, int &left, int &right);  // 获取四周的距离
-    void drawPoint(QImage &img, int x, int y, bool dot);
     void drawPoint(QImage &img, QPoint point, bool dot);
+    void drawLine(QImage &img, QPoint point1, QPoint point2, bool dot);
 
     void paintAuxiliaryLines(QPainter *painter);
     int getPointAuxLineIndex(QPoint point);
@@ -68,12 +66,13 @@ public:
     QImage getImage();
     void resize(QSize size);
 
+protected:
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
 public slots:
     void on_MouseMove(QPoint point);
-    void on_MousePressLeft(QPoint point);
-    void on_MousePressMiddle(QPoint point);
-    void on_MousePressRight(QPoint point);
-    void on_MouseRelease(QPoint point);
     void on_Reserve();  // 反色
     void on_AlignCenter();   // 居中
     void on_AlignHCenter(); // 水平居中
@@ -87,7 +86,6 @@ public slots:
     void on_FlipVer();
     void on_RotateLeft();
     void on_RotateRight();
-    void on_CreateAuxLine(Qt::Orientation dir);
 
 signals:
     void updateStatusBarPos(QPoint);

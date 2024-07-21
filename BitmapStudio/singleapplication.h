@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QApplication>
 #include <QLocalServer>
+#include <QMouseEvent>
+#include <QDebug>
 
 class SingleApplication : public QApplication
 {
