@@ -89,6 +89,7 @@ public slots:
 signals:
     void updateStatusBarPos(QPoint);
     void updateStatusBarSize(QSize);
+    void updateStatusBarMode(QString);
     void updatePreview(QImage);
     void changed(bool);
 };

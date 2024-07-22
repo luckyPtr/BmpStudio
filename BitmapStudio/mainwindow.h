@@ -68,6 +68,7 @@ private:
     QLabel *labelSize;
     QLabel *labelPositionIco;
     QLabel *labelSizeIco_new;
+    QLabel *labelMode;
     TreeItemDelegate *treeItemDelegate;
     void init();
     void initStatusBar();   // 初始化

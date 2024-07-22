@@ -58,6 +58,7 @@ void MainWindow::initStatusBar()
     labelSize = new QLabel();
     labelPositionIco = new QLabel();
     labelSizeIco_new = new QLabel();
+    labelMode = new QLabel();
 
     labelPositionIco->setPixmap(QPixmap(":/Image/StatusBar/Position.png"));
     labelSizeIco_new->setPixmap(QPixmap(":/Image/StatusBar/Size.png"));
@@ -66,6 +67,7 @@ void MainWindow::initStatusBar()
     ui->statusbar->addWidget(labelPosition);
     ui->statusbar->addWidget(labelSizeIco_new);
     ui->statusbar->addWidget(labelSize);
+    ui->statusbar->addPermanentWidget(labelMode);
 
     labelPosition->setMinimumWidth(120);
     labelSize->setMinimumWidth(120);
@@ -175,6 +177,7 @@ void MainWindow::on_UpdateStatusBarSize(QSize size)
     }
 }
 
+
 void MainWindow::on_UpdatePreview(QImage image)
 {
     if(!image.isNull())
@@ -199,6 +202,7 @@ void MainWindow::on_tabWidget_tabCloseRequested(int index)
 void MainWindow::on_actEditMode_triggered(bool checked)
 {
     Global::editMode = checked;
+    labelMode->setText(tr(checked ? "编辑模式" : ""));
     // DialogNotice *dlg = new DialogNotice(checked ? tr("像素编辑模式") : tr("普通模式"));
     // dlg->exec();
 }
