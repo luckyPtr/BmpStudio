@@ -362,7 +362,7 @@ QRect QGraphicsComImgCanvansItem::selectItemsBoundingRect()
     };
 
     QRect boundingRect = getRect(0);
-    foreach (auto i, selectedItems)
+    for (int i = 1; i < selectedItems.size(); i++)
     {
         boundingRect = boundingRect.united(getRect(i));
     }
