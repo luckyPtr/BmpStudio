@@ -15,6 +15,8 @@ int Global::selectedItemBoundColor = 0x00FFFF;
 int Global::selectionBoxColor = 0xFFFF00;
 int Global::guidesColor = 0xFFFF00;
 int Global::selectedGuidesColor = 0xFF8C00;
+int Global::backgroundColorLeftTop = 0xC5CFDF;
+int Global::backgroundColorRightBottom = 0xDCE5F2;
 bool Global::editMode = false;
 
 int Global::exportImgColor_0 = 0xFFFFFF;

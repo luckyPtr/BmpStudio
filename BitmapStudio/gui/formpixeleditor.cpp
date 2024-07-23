@@ -7,6 +7,7 @@
 #include <QCursor>
 #include <custom/qcustommenu.h>
 #include "gui/dialogresize.h"
+#include <QScreen>
 
 
 FormPixelEditor::FormPixelEditor(QWidget *parent) :
@@ -28,9 +29,18 @@ FormPixelEditor::FormPixelEditor(QWidget *parent) :
     scene->addItem(scanvasItem);
     scene->addItem(scaleItem);
 
-    QBrush brush;
-    brush.setColor(0xcbd4e4);
-    brush.setStyle(Qt::SolidPattern);
+    // 获取屏幕的大小
+    QScreen *screen = QGuiApplication::primaryScreen();
+    QRect screenGeometry = screen->geometry();
+    int screenWidth = screenGeometry.width();
+    int screenHeight = screenGeometry.height();
+    // 创建一个 QLinearGradient 对象，从左上角到右下角渐变
+    QLinearGradient gradient(0, 0, screenWidth, screenHeight);
+    // 设置渐变的颜色，从左上角的浅蓝色到右下角的深蓝色
+    gradient.setColorAt(0, QColor(Global::backgroundColorLeftTop));  // 浅蓝色
+    gradient.setColorAt(1, QColor(Global::backgroundColorRightBottom));  // 深蓝色
+    // 创建一个 QBrush 并使用渐变色
+    QBrush brush(gradient);
     scene->setBackgroundBrush(brush);
 
     ui->graphicsView->setRubberBandSelectionMode(Qt::ContainsItemBoundingRect);

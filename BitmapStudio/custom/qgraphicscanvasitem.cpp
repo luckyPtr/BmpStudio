@@ -570,6 +570,11 @@ void QGraphicsCanvasItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     view->viewport()->update();
 }
 
+void QGraphicsCanvasItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
+{
+    qDebug() << event;
+}
+
 
 
 void QGraphicsCanvasItem::on_MouseMove(QPoint point)
