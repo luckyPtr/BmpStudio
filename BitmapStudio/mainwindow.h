@@ -81,6 +81,6 @@ private:
 signals:
     void selectItem(QImage &Image);
     void selectItem(ComImg &comImg, RawData *rd);
-    void editModeTriggered(bool);
+    void editModeChanged();
 };
 #endif // MAINWINDOW_H

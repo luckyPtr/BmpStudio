@@ -279,6 +279,19 @@ QGraphicsCanvasItem::QGraphicsCanvasItem(QWidget *parent)
     startPoint.setY(Global::scaleWidth + Global::scaleOffset);
     action = ActionNull;
 
+    // 获取mainwindow指针
+    auto getMainWindow = [=]() {
+        QObject *obj = parent;
+        while (1)
+        {
+            if (obj->objectName() == "MainWindow")
+            {
+                return obj;
+            }
+            obj = obj->parent();
+        }
+    };
+    connect(getMainWindow(), SIGNAL(editModeChanged()), this, SLOT(on_EditModeChanged()));
     connect(view, SIGNAL(mouseMovePoint(QPoint)), this, SLOT(on_MouseMove(QPoint)));
 
     QPixmap cursorPencilPixmap(":/Image/Cursor/Pencil.svg");
@@ -328,9 +341,6 @@ void QGraphicsCanvasItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
         }
     }
 
-    QElapsedTimer timer;
-    timer.start();
-
 
     // 绘制网格
     QPen pen(Global::gridColor);
@@ -343,8 +353,7 @@ void QGraphicsCanvasItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
     {
         painter->drawLine(startPoint.x(), startPoint.y() + y * Global::pixelSize, startPoint.x() + image.width() * Global::pixelSize, startPoint.y() + y * Global::pixelSize);
     }
-    // qint64 elapsedTime = timer.nsecsElapsed();
-    // qDebug() << "drawPixel function took" << elapsedTime << "nanoseconds";
+
     // 外边框
     pen.setWidth(2);
     pen.setColor(Qt::yellow);
@@ -365,8 +374,6 @@ void QGraphicsCanvasItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
         painter->drawRect(QRect(startPoint.x() + image.width() * Global::pixelSize / 2 - 2, startPoint.y() + image.height() * Global::pixelSize, 4, 4));
         painter->drawRect(QRect(startPoint.x() + image.width() * Global::pixelSize, startPoint.y() + image.height() * Global::pixelSize / 2 - 2, 4, 4));
     }
-
-    // 画布预览
 
     // 校准画布大小到像素点对应的大小
     auto calibrate = ([=](QPoint point){
@@ -462,6 +469,7 @@ void QGraphicsCanvasItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
         if(Global::editMode)
         {
             action = ActionErase;
+            view->setCursor(cursorEraser);
             drawPoint(image, pointToPixel(point), false);
         }
     };
@@ -551,9 +559,14 @@ void QGraphicsCanvasItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
             moveImage(image, currentPixel.x() - moveStartPixel.x(), currentPixel.y() - moveStartPixel.y());
             view->setCursor(Qt::ArrowCursor);
         }
+        else if (action == ActionErase)
+        {
+            view->setCursor(cursorPencil);
+        }
 
         action = ActionNull;
     }
+
     view->viewport()->update();
 }
 
@@ -565,18 +578,15 @@ void QGraphicsCanvasItem::on_MouseMove(QPoint point)
     currentPixel.setX((currentPoint.x() - startPoint.x()) / Global::pixelSize);
     currentPixel.setY((currentPoint.y() - startPoint.y()) / Global::pixelSize);
 
-    qDebug() << action;
     if (Global::editMode)
     {
         if (action == ActionErase)
         {
             view->setCursor(cursorEraser);
-            qDebug() << "eraser";
         }
         else
         {
             view->setCursor(cursorPencil);
-            qDebug() << "pencil";
         }
     }
     else if(action == ActionNull)
@@ -599,6 +609,18 @@ void QGraphicsCanvasItem::on_MouseMove(QPoint point)
 
 
     emit updateStatusBarPos(currentPixel);
+}
+
+void QGraphicsCanvasItem::on_EditModeChanged()
+{
+    if (Global::editMode)
+    {
+        view->setCursor(cursorPencil);
+    }
+    else
+    {
+        view->setCursor(Qt::ArrowCursor);
+    }
 }
 
 

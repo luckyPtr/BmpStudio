@@ -203,6 +203,7 @@ void MainWindow::on_actEditMode_triggered(bool checked)
 {
     Global::editMode = checked;
     labelMode->setText(tr(checked ? "编辑模式" : ""));
+    emit editModeChanged();
     // DialogNotice *dlg = new DialogNotice(checked ? tr("像素编辑模式") : tr("普通模式"));
     // dlg->exec();
 }

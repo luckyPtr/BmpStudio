@@ -72,6 +72,7 @@ protected:
 
 public slots:
     void on_MouseMove(QPoint point);
+    void on_EditModeChanged();
     void on_Reserve();  // 反色
     void on_AlignCenter();   // 居中
     void on_AlignHCenter(); // 水平居中
