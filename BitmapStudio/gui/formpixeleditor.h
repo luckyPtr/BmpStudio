@@ -31,10 +31,9 @@ private:
 
     void initScrollerPos();   // 初始化滚轮位置为左上角
     void initAction();
-
+    void initShortCut();
 protected:
     void leaveEvent(QEvent *event) override;
-    void contextMenuEvent(QContextMenuEvent *event) override;
 
 public slots:
     void paintView();

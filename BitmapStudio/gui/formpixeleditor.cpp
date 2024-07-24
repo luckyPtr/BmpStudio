@@ -8,6 +8,8 @@
 #include <custom/qcustommenu.h>
 #include "gui/dialogresize.h"
 #include <QScreen>
+#include <QShortcut>
+#include "custom/qgraphicscanvasitem.h"
 
 
 FormPixelEditor::FormPixelEditor(QWidget *parent) :
@@ -75,6 +77,8 @@ FormPixelEditor::FormPixelEditor(QWidget *parent) :
     addAction(ui->actMoveDown);
     addAction(ui->actMoveLeft);
     addAction(ui->actMoveRight);
+
+    initShortCut();
 }
 
 FormPixelEditor::~FormPixelEditor()
@@ -139,54 +143,24 @@ void FormPixelEditor::initAction()
 //    ui->toolBtnSave->setDefaultAction(ui->actSave);
 }
 
+void FormPixelEditor::initShortCut()
+{
+
+
+    auto createShortCut = [=](auto key, void (QGraphicsCanvasItem::*method)()) {
+        QShortcut* shortcut = new QShortcut(QKeySequence(key), this);
+        connect(shortcut, &QShortcut::activated, scanvasItem, method);
+    };
+
+    // createShortCut("Up", &QGraphicsComImgCanvansItem::on_MoveUp);
+    // createShortCut("Down", &QGraphicsComImgCanvansItem::on_MoveDown);
+}
+
 void FormPixelEditor::leaveEvent(QEvent *event)
 {
     emit updateStatusBarPos(QPoint(-1, -1));
 }
 
-void FormPixelEditor::contextMenuEvent(QContextMenuEvent *event)
-{
-    // 编辑模式下右键无效
-    if(Global::editMode)
-        return;
-
-    QMenu menu;
-
-    menu.addAction(ui->actAutoResize);
-
-    QMenu menuRotate(tr("变换"));
-    menuRotate.addAction(ui->actRotateLeft);
-    menuRotate.addAction(ui->actRotateRight);
-    menuRotate.addAction(ui->actFlipHorizontal);
-    menuRotate.addAction(ui->actFlipVerital);
-    menu.addMenu(&menuRotate);
-
-    QCustomMenu menuMove;
-    menuMove.setTitle(tr("移动"));
-    menuMove.setIcon(QIcon(":/Image/PixelEditor/Move.svg"));
-    menuMove.addAction(ui->actMoveUp);
-    menuMove.addAction(ui->actMoveDown);
-    menuMove.addAction(ui->actMoveLeft);
-    menuMove.addAction(ui->actMoveRight);
-    menu.addMenu(&menuMove);
-
-    QMenu menuAuxiliaryLine(tr("辅助线"));
-    menuAuxiliaryLine.addAction(ui->actLockAuxiliaryLine);
-    menuAuxiliaryLine.addAction(ui->actHideAuxiliaryLine);
-    menuAuxiliaryLine.addAction(ui->actClearAuxiliaryLines);
-    menu.addMenu(&menuAuxiliaryLine);
-
-    QMenu menuAlign(tr("布局"));
-    menuAlign.addAction(ui->actCenter);
-    menuAlign.addAction(ui->actAlignHCenter);
-    menuAlign.addAction(ui->actAlignVCenter);
-    menu.addMenu(&menuAlign);
-
-    menu.addAction(ui->actResize);
-
-    menu.addAction(ui->actReserve);
-    menu.exec(QCursor::pos());
-}
 
 void FormPixelEditor::paintView()
 {

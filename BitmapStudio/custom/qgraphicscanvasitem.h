@@ -78,6 +78,7 @@ public slots:
     void on_AlignHCenter(); // 水平居中
     void on_AlignVCenter(); // 垂直居中
     void on_AutoResize();   // 自动裁剪
+    void on_Resize();      // 重新调整画面大小
     void on_MoveUp();
     void on_MoveDown();
     void on_MoveLeft();

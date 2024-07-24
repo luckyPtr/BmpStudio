@@ -140,42 +140,6 @@ void FormComImgEditor::leaveEvent(QEvent *event)
     emit updateStatusBarPos(QPoint(-1, -1));
 }
 
-void FormComImgEditor::contextMenuEvent(QContextMenuEvent *event)
-{
-    QMenu menu;
-
-    menu.addAction(ui->actOpen);
-    menu.addAction(ui->actPosition);
-
-    QCustomMenu menuMove;
-    menuMove.setTitle(tr("移动"));
-    menuMove.addAction(ui->actMoveUp);
-    menuMove.addAction(ui->actMoveDown);
-    menuMove.addAction(ui->actMoveLeft);
-    menuMove.addAction(ui->actMoveRight);
-    menu.addMenu(&menuMove);
-
-    QMenu menuLayer(tr("图层"));
-    menuLayer.addAction(ui->actTop);
-    menuLayer.addAction(ui->actBottom);
-    menuLayer.addAction(ui->actForward);
-    menuLayer.addAction(ui->actBackward);
-    menu.addMenu(&menuLayer);
-
-    QMenu menuLayout(tr("布局"));
-    menuLayout.addAction(ui->actAlignHCenter);
-    menuLayout.addAction(ui->actAlignVCenter);
-    menuLayout.addAction(ui->actAlignCenter);
-    menu.addMenu(&menuLayout);
-
-    menu.addAction(ui->actDelete);
-    menu.addAction(ui->actClean);
-
-    menu.addAction(ui->actResize);
-
-    menu.exec(QCursor::pos());
-}
-
 
 void FormComImgEditor::on_LoadComImg(ComImg &comImg, RawData *rd)
 {

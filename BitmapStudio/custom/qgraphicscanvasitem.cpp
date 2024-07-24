@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QtConcurrent/QtConcurrent>
+#include "custom/qcustommenu.h"
 
 QPoint QGraphicsCanvasItem::pointToPixel(QPoint point)
 {
@@ -572,7 +573,42 @@ void QGraphicsCanvasItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
 void QGraphicsCanvasItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
-    qDebug() << event;
+    auto createAction = [=](QMenu *menu, QString name, QString key, void (QGraphicsCanvasItem::*method)()) {
+        QAction *action = menu->addAction(name);
+        action->setShortcut(QKeySequence(key));
+        connect(action, &QAction::triggered, this, method);
+    };
+
+    QMenu menu;
+
+    QCustomMenu *menuMove = new QCustomMenu(tr("移动"));
+    createAction(menuMove, tr("上"), "Up", &QGraphicsCanvasItem::on_MoveUp);
+    createAction(menuMove, tr("下"), "Down", &QGraphicsCanvasItem::on_MoveDown);
+    createAction(menuMove, tr("左"), "Left", &QGraphicsCanvasItem::on_MoveLeft);
+    createAction(menuMove, tr("右"), "Right", &QGraphicsCanvasItem::on_MoveRight);
+    menu.addMenu(menuMove);
+
+    QMenu *menuTransform = new QMenu(tr("变换"));
+    createAction(menuTransform, tr("逆时针旋转90°"), "Ctrl+[", &QGraphicsCanvasItem::on_RotateLeft);
+    createAction(menuTransform, tr("顺时针旋转90°"), "Ctrl+]", &QGraphicsCanvasItem::on_RotateRight);
+    createAction(menuTransform, tr("水平翻转"), "H", &QGraphicsCanvasItem::on_FlipHor);
+    createAction(menuTransform, tr("垂直翻转"), "V", &QGraphicsCanvasItem::on_FlipVer);
+    menu.addMenu(menuTransform);
+
+    QMenu *menuAlgin = new QMenu(tr("对齐"));
+    createAction(menuAlgin, tr("水平对齐"), "Ctrl+Alt+H", &QGraphicsCanvasItem::on_AlignHCenter);
+    createAction(menuAlgin, tr("垂直对齐"), "Ctrl+Alt+V", &QGraphicsCanvasItem::on_AlignVCenter);
+    createAction(menuAlgin, tr("中心对齐"), "Ctrl+Alt+C", &QGraphicsCanvasItem::on_AlignCenter);
+    menu.addMenu(menuAlgin);
+
+    QMenu *menuSize = new QMenu(tr("画面尺寸"));
+    createAction(menuSize, tr("调整大小"), "", &QGraphicsCanvasItem::on_Resize);
+    createAction(menuSize, tr("自适应"), "", &QGraphicsCanvasItem::on_AutoResize);
+    menu.addMenu(menuSize);
+
+    createAction(&menu, tr("反色"), "", &QGraphicsCanvasItem::on_Reserve);
+
+    menu.exec(event->screenPos());
 }
 
 
@@ -668,6 +704,11 @@ void QGraphicsCanvasItem::on_AutoResize()
     resizeImage(image, QSize(image.width() - leftMargin - rightMargin, image.height() - upMargin - downMargin));
     view->scene()->setSceneRect(QRectF(0, 0, image.width() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset, image.height() * Global::pixelSize + Global::scaleWidth + Global::scaleOffset));
     view->viewport()->update();
+}
+
+void QGraphicsCanvasItem::on_Resize()
+{
+    qDebug() << "Resize";
 }
 
 void QGraphicsCanvasItem::on_MoveUp()
